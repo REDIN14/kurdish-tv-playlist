@@ -14,7 +14,7 @@ from difflib import SequenceMatcher
 
 from .catalog import Catalog, CatalogChannel, url_target
 from .config import SourceConfig
-from .models import RawCandidate
+from .models import UNCLASSIFIED, RawCandidate
 from .normalize import display_name, is_token_subset, name_key, similarity
 from .policy import Policy, credential_reason
 from .util import slugify, url_key
@@ -38,6 +38,7 @@ class Member:
     channel_id: str | None = None
     how: str = ""
     catalog: CatalogChannel | None = None
+    catalog_only: bool = False  # from a community list that may only add streams to channels known elsewhere
     verdict: str = "in"  # in | out
     reason: str = ""
     warnings: list[str] = field(default_factory=list)
@@ -119,7 +120,7 @@ def match_candidates(
     policy: Policy,
 ) -> MatchResult:
     result = MatchResult()
-    members = [Member(cid=cid, cand=cand, trust=src.trust) for cid, cand, src in items]
+    members = [Member(cid=cid, cand=cand, trust=src.trust, catalog_only=src.catalog_only) for cid, cand, src in items]
 
     # ---- A. pre-filters that need nothing but the URL ------------------------------------------------------------
     live: list[Member] = []
@@ -140,7 +141,7 @@ def match_candidates(
     live = [m for m in live if m.verdict == "in" or _record_exclusion(result, m)]
 
     # ---- C. one URL claimed by different channels -----------------------------------------------------------------
-    _settle_url_conflicts(live, catalog, result)
+    conflicts = _settle_url_conflicts(live, catalog, result)
 
     # ---- D. channel level scope ---------------------------------------------------------------------------------------
     by_channel: dict[str, list[Member]] = defaultdict(list)
@@ -173,6 +174,9 @@ def match_candidates(
         for m in kept:
             group.warnings.extend(m.warnings)
 
+    for cid, message in conflicts:
+        if cid in result.groups:
+            result.warn("label-conflict", message, channel=cid)
     _possible_duplicates(result, policy)
     return result
 
@@ -242,10 +246,15 @@ def _identify(m: Member, catalog: Catalog, policy: Policy) -> None:
 
 
 def _rank(m: Member) -> tuple:
-    return (_EVIDENCE.get(m.how, 0), _CONFIDENCE.get(m.cand.name_confidence, 1), 2 if m.trust == "high" else 1)
+    # A community list's label never outvotes a normal source's: it must not rename a channel that is already published.
+    return (0 if m.catalog_only else 1, _EVIDENCE.get(m.how, 0), _CONFIDENCE.get(m.cand.name_confidence, 1), 2 if m.trust == "high" else 1)
 
 
-def _settle_url_conflicts(live: list[Member], catalog: Catalog, result: MatchResult) -> None:
+def _settle_url_conflicts(live: list[Member], catalog: Catalog, result: MatchResult) -> list[tuple[str, str]]:
+    """One URL, several channel claims: the best evidence wins. Returns (winning channel, message) for the report; the caller
+    only reports those whose channel is published (community lists label world channels inconsistently, and nobody needs to
+    read about conflicts over a channel that is not in the playlist anyway)."""
+    conflicts: list[tuple[str, str]] = []
     by_url: dict[str, list[Member]] = defaultdict(list)
     for m in live:
         by_url[url_key(m.cand.url)].append(m)
@@ -255,14 +264,14 @@ def _settle_url_conflicts(live: list[Member], catalog: Catalog, result: MatchRes
             continue
         winner = max(members, key=_rank)
         claims = ", ".join(f"{m.channel_id} ({m.source_id}: {m.cand.name!r})" for m in members)
-        result.warn(
-            "label-conflict",
+        conflicts.append((
+            winner.channel_id,  # type: ignore[arg-type]
             f"one stream URL is claimed by different channels: {claims}; published as {winner.channel_id}. {winner.cand.url}",
-            channel=winner.channel_id,
-        )
+        ))
         for m in members:
             if m is not winner:
                 m.channel_id, m.catalog, m.how = winner.channel_id, winner.catalog, winner.how + "+vote"
+    return conflicts
 
 
 def _build_group(cid: str, members: list[Member], catalog: Catalog, policy: Policy) -> ChannelGroup:
@@ -306,14 +315,25 @@ def _scope_reason(group: ChannelGroup, policy: Policy, result: MatchResult) -> t
     if foreign and not policy.has_kurdish_marker(group.name):
         return "out-of-scope", f"source tags it as {foreign} only, no Kurdish marker"
 
-    has_trusted = any(m.trust == "high" for m in group.members)
-    if has_trusted:
+    # Community lists may add streams to a channel that is known elsewhere, but they do not make a channel by themselves.
+    voices = [m for m in group.members if not m.catalog_only]
+    if not voices:
+        return "needs-review", "only a community list carries it and it is not in catalog.yaml; add it there once checked"
+
+    trusted = [m for m in voices if m.trust == "high"]
+    if trusted:
         if policy.unknown_from_trusted == "review":
             return "needs-review", "not in the catalogue; policy asks for review before publishing"
+        if all(UNCLASSIFIED in m.cand.tags for m in trusted):
+            # A bare channel page on a site that also lists Turkish, Arabic and international TV: only a Kurdish marker in the
+            # name, or a second trusted source, makes it a Kurdish channel.
+            texts = [group.name] + [x for m in voices for x in (m.cand.name, *m.cand.aliases)]
+            if not policy.has_kurdish_marker(*texts):
+                return "needs-review", "listed without any language or country information and nothing marks it as Kurdish; add it to catalog.yaml once checked"
         return None
     if not policy.require_corroboration:
         return None
-    if len(group.sources) >= 2 or any(_corroborated(m) for m in group.members):
+    if len({m.source_id for m in voices}) >= 2 or any(_corroborated(m) for m in voices):
         return None
     return "uncorroborated", "only a low-trust source lists it and its name is not confirmed by the stream URL or another source"
 

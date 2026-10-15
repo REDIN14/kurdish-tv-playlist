@@ -2,6 +2,7 @@
 
 import asyncio
 import dataclasses
+import json
 
 import pytest
 from PIL import Image
@@ -111,6 +112,33 @@ async def test_selection_uses_measured_quality_not_claims_or_url_text(app, world
     assert backups(app)["waar-tv-alt2"].url == liar
     row = app.db.one("SELECT height, verified FROM health h JOIN candidates c ON c.id = h.candidate_id WHERE c.url = ?", (liar,))
     assert (row["height"], row["verified"]) == (480, 1)  # what was measured, not what was claimed
+
+
+async def test_the_broadcasters_own_stream_leads_even_when_a_copy_is_sharper(app, world):
+    # Kurdsat: the sharper copy (1080p, akamai) is listed by an aggregator; the broadcaster's own server serves 720p
+    app.catalog.by_id["kurdsat-tv"] = dataclasses.replace(app.catalog.by_id["kurdsat-tv"], sites=("kurdsat.akamaized.net",))
+    await refresh(app, "test")
+    assert primaries(app)["kurdsat-tv"].url == KSAT_B  # original source first ...
+    assert backups(app)["kurdsat-tv-alt2"].url == KSAT_A  # ... the copy is the fallback
+    rows = json.loads((app.settings.published_dir / "channels.json").read_text(encoding="utf-8"))
+    assert next(c for c in rows if c["id"] == "kurdsat-tv")["streams"][0]["official"] is True  # exposed for auditing
+
+
+async def test_a_stream_found_on_the_broadcasters_own_page_is_the_original(make_app, world, settings):
+    world.stream("https://waar-a.example/live/master.m3u8", 1080)
+    world.stream("https://waar-b.example/live/master.m3u8", 480)
+    world.m3u_entries += [["Waar TV", "Kurdish", "https://waar-a.example/live/master.m3u8"]]  # the aggregator's list
+    world.kurditv_posts += [(4, "Waar TV ZINDI", "waar-tv-zindi", 3, ["https://waar-b.example/live/master.m3u8"])]
+    world.publish_sources()
+    flagged = dataclasses.replace(
+        settings,
+        publish=dataclasses.replace(settings.publish, min_channels=3),
+        sources=tuple(dataclasses.replace(s, official=(s.id == "kurditv")) for s in settings.sources),  # pretend kurditv is Waar's own page
+    )
+    app = make_app(settings_override=flagged, canary_urls=(CANARY,))
+    await refresh(app, "test")
+    assert primaries(app)["waar-tv"].url == "https://waar-b.example/live/master.m3u8"
+    assert backups(app)["waar-tv-alt2"].url == "https://waar-a.example/live/master.m3u8"
 
 
 async def test_stream_that_announces_itself_as_another_network_is_rejected(app, world, monkeypatch):

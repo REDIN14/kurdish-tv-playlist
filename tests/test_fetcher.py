@@ -187,3 +187,16 @@ def test_find_hls_urls_handles_json_escapes_and_duplicates():
         "https://cdn.test/live/b.m3u8?x=1&y=2",
         "http://cdn.test:1935/live/a.m3u8",
     ]
+
+
+def test_find_hls_urls_returns_the_stream_inside_a_player_wrapper():
+    text = (
+        '<iframe src="https://hlsplayer.net/embed?type=m3u8&amp;src=https://stream.badinan.xyz/welat/tv/playlist.m3u8"></iframe>'
+        ' <a href="https://player.test/p?file=https%3A%2F%2Fcdn.test%2Flive%2Fx.m3u8&amp;autoplay=1">x</a>'
+        ' <a href="https://cdn.test/live/y.m3u8?quality=hd&amp;redirect=1">y</a>'
+    )
+    assert find_hls_urls(text) == [
+        "https://stream.badinan.xyz/welat/tv/playlist.m3u8",
+        "https://cdn.test/live/x.m3u8",
+        "https://cdn.test/live/y.m3u8?quality=hd&redirect=1",
+    ]

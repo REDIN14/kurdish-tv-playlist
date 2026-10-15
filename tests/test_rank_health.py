@@ -13,12 +13,12 @@ CFG = ProbeSettings()
 
 
 def st(cid, url=None, *, height=720, verified=True, bitrate=2_000_000, fps=25.0, latency=300, failures=0, ok=True,
-       last_ok_at=NOW - 60, source="a", trust="high", kind="hls-master", probes=10, probes_ok=10):
+       last_ok_at=NOW - 60, source="a", trust="high", kind="hls-master", probes=10, probes_ok=10, official=False):
     return CandState(
         cid=cid, url=url or f"https://host{cid}.example/live.m3u8", source_id=source, trust=trust, channel_id="ch",
         consecutive_failures=failures, probes_total=probes, probes_ok=probes_ok, last_ok=ok, last_ok_at=last_ok_at,
         kind=kind, height=height, width=height * 16 // 9 if height else None, fps=fps, bitrate=bitrate, bandwidth=bitrate,
-        verified=verified, latency_ms=latency,
+        verified=verified, latency_ms=latency, official=official,
     )
 
 
@@ -31,6 +31,21 @@ def order(states, **kw):
 
 def test_highest_verified_resolution_wins():
     ids, _ = order([st(1, height=720), st(2, height=1080), st(3, height=576)])
+    assert ids == [2, 1, 3]
+
+
+def test_the_broadcasters_own_stream_is_preferred_while_it_works():
+    # the original source wins even against a sharper copy; the copy stays as the fallback on another server
+    ids, ch = order([st(1, height=1080), st(2, height=480, official=True)])
+    assert ids == [2, 1] and ch.primary.official
+    # ... but only while it works: a failing original gives way to the copy (3 failures = not eligible any more)
+    ids, ch = order([st(1, height=1080), st(2, height=480, official=True, failures=3, ok=False)])
+    assert ids == [1] and ch.status == "healthy"
+    # a pinned URL still comes first
+    ids, _ = order([st(1, url="https://pinned.example/a.m3u8", height=240), st(2, height=1080, official=True)], pin_url="https://pinned.example/a.m3u8")
+    assert ids[0] == 1
+    # among several originals the usual quality order applies
+    ids, _ = order([st(1, height=480, official=True), st(2, height=1080, official=True), st(3, height=1080)])
     assert ids == [2, 1, 3]
 
 

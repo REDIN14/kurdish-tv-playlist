@@ -7,7 +7,7 @@ import re
 import zlib
 from dataclasses import dataclass, field
 from urllib import robotparser
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .config import SourceConfig
 from .db import Database
@@ -290,10 +290,28 @@ _M3U8_RE = re.compile(
 )
 
 
+_WRAPPER_PARAMS = {"src", "url", "file", "source", "stream", "link", "video", "m3u8"}
+
+
+def _unwrap_player_url(url: str) -> str:
+    """A third-party player page that takes the stream as a parameter (hlsplayer.net/embed?type=m3u8&src=https://x/y.m3u8)
+    is not the stream: return the stream address inside it."""
+    query = urlsplit(url).query
+    if not query:
+        return url
+    for key, values in parse_qs(query).items():
+        if key.lower() in _WRAPPER_PARAMS:
+            for value in values:
+                if value.lower().startswith(("http://", "https://")) and ".m3u8" in value.lower():
+                    return value
+    return url
+
+
 def find_hls_urls(text: str) -> list[str]:
-    """All .m3u8 URLs in a block of HTML/JS (handles JSON-escaped slashes), in order, de-duplicated."""
+    """All .m3u8 URLs in a block of HTML/JS (handles JSON-escaped slashes), in order, de-duplicated. A player page that wraps
+    the stream address in its own query string is replaced by the stream address it carries."""
     seen: dict[str, None] = {}
     for match in _M3U8_RE.finditer(text):
         url = match.group(0).replace("\\/", "/").replace("&amp;", "&")
-        seen.setdefault(url, None)
+        seen.setdefault(_unwrap_player_url(url), None)
     return list(seen)

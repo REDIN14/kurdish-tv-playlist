@@ -13,6 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 HIGH = SourceConfig(id="high", adapter="m3u", url="https://h.test/", trust="high")
 HIGH2 = SourceConfig(id="high2", adapter="m3u", url="https://h2.test/", trust="high")
 LOW = SourceConfig(id="low", adapter="m3u", url="https://l.test/", trust="low")
+LIST = SourceConfig(id="list", adapter="m3u", url="https://list.test/", trust="low", catalog_only=True)  # a community list
 
 
 @pytest.fixture(scope="module")
@@ -56,12 +57,12 @@ def test_variants_of_a_name_are_one_channel(catalog, policy):
 
 def test_unknown_channels_with_equal_normalised_names_are_merged(catalog, policy):
     res = run([
-        (HIGH, cand(HIGH, "Befrin HD", "https://a.example/befrin.m3u8", tags=("Kurdish",))),
-        (HIGH2, cand(HIGH2, "BEFRÎN live", "https://b.example/befrin.m3u8")),
+        (HIGH, cand(HIGH, "Zhwan HD", "https://a.example/zhwan.m3u8", tags=("Kurdish",))),
+        (HIGH2, cand(HIGH2, "ZHWÂN live", "https://b.example/zhwan.m3u8")),
     ], catalog, policy)
-    assert list(res.groups) == ["befrin"]
-    group = res.groups["befrin"]
-    assert group.unknown and len(group.members) == 2 and group.name == "Befrin"
+    assert list(res.groups) == ["zhwan"]
+    group = res.groups["zhwan"]
+    assert group.unknown and len(group.members) == 2 and group.name == "Zhwan"
 
 
 def test_identical_urls_are_not_the_dedup_criterion(catalog, policy):
@@ -141,6 +142,54 @@ def test_trusted_unknown_can_be_held_for_review(catalog, tmp_path):
     cfg.write_text((REPO / "config" / "policy.yaml").read_text(encoding="utf-8").replace("unknown_from_trusted: include", "unknown_from_trusted: review"), encoding="utf-8")
     res = run([(HIGH, cand(HIGH, "Brand New TV", "https://x.example/n.m3u8"))], catalog, Policy.load(cfg))
     assert not res.groups and reasons(res) == {"Brand New TV": "needs-review"}
+
+
+def test_unclassified_channel_page_needs_a_kurdish_marker_or_a_second_trusted_source(catalog, policy):
+    # kurdtvs.net lists Turkish, Arabic and international TV beside the Kurdish channels; a bare channel page says nothing
+    # about language, so "NASA TV Live" must not become part of a Kurdish playlist just because the site is trusted.
+    bare = ("unclassified",)
+    res = run([
+        (HIGH, cand(HIGH, "Euro Star", "https://x.example/eurostar/master.m3u8", tags=bare)),
+        (HIGH, cand(HIGH, "Kurdish Kids TV", "https://x.example/kids/master.m3u8", tags=bare)),  # the name says Kurdish
+        (HIGH, cand(HIGH, "Shar TV", "https://x.example/shar/master.m3u8", tags=bare)),  # also in another trusted source
+        (HIGH2, cand(HIGH2, "Shar TV", "https://y.example/shar/master.m3u8", tags=("Kurdish",))),
+        (HIGH, cand(HIGH, "Rudaw HD", "https://x.example/rudaw/master.m3u8", tags=bare)),  # a catalogue channel is unaffected
+    ], catalog, policy)
+    assert set(res.groups) == {"kurdish-kids", "shar", "rudaw-tv"}
+    assert reasons(res) == {"Euro Star": "needs-review"}
+    assert "nothing marks it as Kurdish" in next(m.reason for m in res.excluded if m.cand.name == "Euro Star")
+
+
+def test_community_list_adds_streams_to_known_channels_but_cannot_introduce_one(catalog, policy):
+    res = run([
+        (HIGH, cand(HIGH, "Brand New Kurdish TV", "https://x.example/new/master.m3u8")),  # known from a normal source
+        (LIST, cand(LIST, "brand new kurdish tv hd", "https://backup.example/new/playlist.m3u8")),  # same channel, second stream
+        (LIST, cand(LIST, "Rudaw", "https://live.rudaw.net/hls/rudaw-tv/stream_1080p.m3u8")),  # a catalogue channel
+        (LIST, cand(LIST, "Tom And Jerry", "https://cartoons.example/tj/playlist.m3u8")),  # nobody else lists it
+        (LIST, cand(LIST, "Nat Geo World", "https://x.example/ng/playlist.m3u8")),  # a denied brand says why
+    ], catalog, policy)
+    assert set(res.groups) == {"brand-new-kurdish", "rudaw-tv"}
+    assert len(res.groups["brand-new-kurdish"].members) == 2 and res.groups["rudaw-tv"].members[0].source_id == "list"
+    assert reasons(res) == {"Tom And Jerry": "needs-review", "Nat Geo World": "out-of-scope"}
+    assert "community list" in next(m.reason for m in res.excluded if m.cand.name == "Tom And Jerry")
+
+
+def test_a_community_lists_label_never_renames_a_published_channel(catalog, policy):
+    # the same stream under two spellings: the normal source's id must win or the channel's tvg-id would change overnight
+    res = run([
+        (LIST, cand(LIST, "ku | Hormzyar TV", "http://avrstream.com:1935/live/HormzyarHD/playlist.m3u8")),
+        (LOW, cand(LOW, "Hormzyar HD", "http://avrstream.com:1935/live/HormzyarHD/playlist.m3u8")),
+        (HIGH, cand(HIGH, "Hormzyar HD", "https://other.example/hormzyar/master.m3u8", tags=("Kurdish",))),
+    ], catalog, policy)
+    assert list(res.groups) == ["hormzyar"] and len(res.groups["hormzyar"].members) == 3
+
+
+def test_community_lists_do_not_corroborate_a_low_trust_source(catalog, policy):
+    res = run([
+        (LOW, cand(LOW, "Amed tv", "http://176.236.106.172:8080/hls/ferat.m3u8")),
+        (LIST, cand(LIST, "Amed TV", "https://other.example/amed/master.m3u8")),
+    ], catalog, policy)
+    assert not res.groups and "uncorroborated" in {m.reason.split(":")[0] for m in res.excluded}
 
 
 def test_low_trust_unknown_needs_corroboration(catalog, policy):
@@ -267,6 +316,17 @@ def test_iptv_org_categories_are_understood():
     assert _category_from_tags({"Culture", "General"}) == "Culture"
     assert _category_from_tags({"Culture", "General", "Religious"}) == "Culture"  # Sercem TV: culture first
     assert _category_from_tags({"Religious"}) == "Religion"
+
+
+def test_original_source_is_recognised_by_domain_or_own_server(catalog):
+    rudaw = catalog.by_id["rudaw-tv"]
+    assert rudaw.is_original("https://live.rudaw.net/hls/rudaw-tv/master.m3u8")  # its own domain
+    assert not rudaw.is_original("https://hlspackager.akamaized.net/live/DB/RUDAW/HLS/RUDAW.m3u8")  # somebody's copy
+    assert not rudaw.is_original("https://rudaw.net.evil.example/x.m3u8")  # a look-alike host is not the domain
+    waar = catalog.by_id["waar-tv"]
+    assert waar.is_original("https://live.kwikmotion.com/waarmedialive/waarmedia.smil/playlist.m3u8")  # its own account ...
+    assert not waar.is_original("https://live.kwikmotion.com/syriatvlive/syriatv.smil/playlist.m3u8")  # ... not the provider's
+    assert not catalog.by_id["kurdsat-tv"].is_original("https://hlspackager.akamaized.net/live/DB/KURDSAT_HD/HLS/KURDSAT_HD.m3u8")
 
 
 def test_shipped_catalog_is_consistent(catalog):

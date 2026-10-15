@@ -84,6 +84,20 @@ async def test_ffprobe_measurement_overrides_the_claimed_resolution(web, monkeyp
     await http.aclose()
 
 
+async def test_stream_that_is_not_what_its_playlist_announces_is_rejected(web, monkeypatch):
+    """A CDN that blocks a stream can swap the segments for a canned clip; the master still announces H.264 720p/1080p."""
+    web.add_stream(BASE + "master.m3u8", variants=hi_lo())
+
+    async def fake_ffprobe(path, data, timeout=20.0):
+        return {"streams": [{"codec_type": "video", "codec_name": "mpeg2video", "width": 640, "height": 480, "avg_frame_rate": "25/1"}]}
+
+    monkeypatch.setattr(probe_mod, "run_ffprobe", fake_ffprobe)
+    http, prober = make(web, ffprobe="ffprobe")
+    r = await prober.probe(BASE + "master.m3u8")
+    assert not r.ok and not r.verified and "announces h264 video but the stream carries mpeg2video" in r.error
+    await http.aclose()
+
+
 async def test_stream_service_name_is_reported(web, monkeypatch):
     web.add_stream(BASE + "master.m3u8", variants=hi_lo())
 

@@ -9,7 +9,11 @@
 # naming, grouping, language/country tags and de-duplication. Add entries freely - no code change needed.
 #
 # Fields: id (stable tvg-id, never change it), name, aliases, category, language (ckb Sorani | kmr Kurmanji |
-#         ku Kurdish), country (ISO-2), url_patterns, logo (optional direct https logo URL).
+#         ku Kurdish), country (ISO-2), url_patterns, sites, logo (optional direct https logo URL).
+#
+# sites = the broadcaster's own web domains; own_servers = its own account on a hosting provider ("host/path" fragments).
+# A stream served from either - or found on the broadcaster's own page by the "official" source - is the channel's ORIGINAL
+# source and is listed first while it works (src/kurdiptv/rank.py).
 
 version: 1
 channels:
@@ -21,6 +25,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [live.rudaw.net, rudawlive]
+    sites: [rudaw.net]
 
   - id: kurdistan24
     name: Kurdistan 24
@@ -29,6 +34,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [d1x82nydcxndze.cloudfront.net]
+    sites: [kurdistan24.net]
 
   - id: kurdistan-tv
     name: Kurdistan TV
@@ -37,6 +43,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [5a3ed7a72ed4b.streamlock.net/live/]
+    sites: [kurdistantv.net]
 
   - id: kurdsat-tv
     name: Kurdsat TV
@@ -45,6 +52,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [KURDSAT_HD, kurdsat.akamaized.net, 366ca61db4c646a2bf9cd9f92dd6321c]
+    sites: [kurdsat.tv]
 
   - id: kurdsat-news
     name: Kurdsat News
@@ -53,6 +61,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [KURDSAT_NEWS, kurdsat-news.akamaized.net, 107b7df8f5444d778f349100739a09cd]
+    sites: [kurdsatnews.com]
 
   - id: nrt-tv
     name: NRT TV
@@ -61,6 +70,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [giatv-nrt]
+    sites: [nrttv.com]
 
   - id: nrt-2
     name: NRT 2
@@ -76,6 +86,7 @@ channels:
     language: ku
     country: IQ
     url_patterns: [zagrostv]
+    own_servers: [5a3ed7a72ed4b.streamlock.net/zagrostv]   # same Wowza account as Kurdistan TV, whose own page lists it (both are KDP channels)
 
   - id: waar-tv
     name: Waar TV
@@ -84,6 +95,8 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [waarmedia]
+    sites: [waarmedia.com]
+    own_servers: [live.kwikmotion.com/waarmedialive]   # Waar's own application on its streaming provider (the Akamai "DB" packager hosts dozens of other channels too)
 
   - id: gali-kurdistan-tv
     name: Gali Kurdistan TV
@@ -92,6 +105,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [gksat, GaliKurdistan]
+    sites: [gksat.tv]
 
   - id: payam-tv
     name: Payam TV
@@ -100,6 +114,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [PayamTV, /8218/8218]
+    sites: [peyam.net]
 
   - id: khak-tv
     name: Khak TV
@@ -116,6 +131,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [afarinTV/]
+    sites: [afarin.tv]
 
   - id: utv-hawler
     name: UTV Hawler
@@ -130,6 +146,7 @@ channels:
     category: General
     language: ku
     url_patterns: [spedahd]
+    sites: [speda.net]
 
   - id: knn
     name: KNN
@@ -138,6 +155,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [knnHD]
+    sites: [knnc.net]
 
   - id: kirkuk-tv
     name: Kirkuk TV
@@ -146,6 +164,7 @@ channels:
     language: ku
     country: IQ
     url_patterns: [kirkuklive]
+    sites: [kirkuktv.net]
 
   - id: duhok-tv
     name: Duhok TV
@@ -169,6 +188,7 @@ channels:
     category: Education
     language: ckb
     country: IQ
+    sites: [amozhgary.tv]
 
   - id: next-tv
     name: Next TV
@@ -193,6 +213,8 @@ channels:
     url_patterns: [jintv]
 
   # ---------------------------------------------------------------- Kurdmax family (several distinct channels)
+    sites: [jintv.net, jintv.org]
+
   - id: kurdmax-sorani
     name: Kurdmax Sorani
     aliases: [Kurdmax TV Sorani, Kurdmax Surani, Kurdmax Soran, Kurdmax TV Soran, Kurdmax Sorani 1, "Kurdmax Sorani #1 Best", Kurdmax TV]
@@ -200,6 +222,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [kurdmax-sorani, KurdmaxS0rani, KURDB3388, Kurdmax_sorani]
+    sites: [kurdmax.tv]
 
   - id: kurdmax-kurmanci
     name: Kurdmax Kurmanci
@@ -208,6 +231,7 @@ channels:
     language: kmr
     country: IQ
     url_patterns: [kurdmax-kurmanji]
+    sites: [kurdmax.tv]
 
   - id: kurdmax-show
     name: Kurdmax Show
@@ -216,6 +240,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [kurdmaxshow-sorani, SHOWS123, kurdmaxshowSO]
+    sites: [kurdmax.tv]
 
   - id: kurdmax-show-kurmanci
     name: Kurdmax Show Kurmanci
@@ -224,6 +249,7 @@ channels:
     language: kmr
     country: IQ
     url_patterns: [liveTrans/SHOW2/]
+    sites: [kurdmax.tv]
 
   - id: kurdmax-music
     name: Kurdmax Music
@@ -234,12 +260,15 @@ channels:
     url_patterns: [31.14.40.139:1935/music/]
 
   # ---------------------------------------------------------------- Kurmanji / diaspora / Turkey
+    sites: [kurdmax.tv]
+
   - id: ronahi-tv
     name: Ronahi TV
     aliases: [Ronahi, Ronahî TV, Ronahî]
     category: News
     language: kmr
     url_patterns: [RonahiTV, RONAHI_TV, ronahi-tv.akamaized.net]
+    sites: [ronahi.tv]
 
   - id: sterk-tv
     name: Sterk TV
@@ -247,6 +276,7 @@ channels:
     category: Music
     language: kmr
     url_patterns: [sterktv, zindi.sterk.tv]
+    sites: [sterk.tv, sterktv1.net]
 
   - id: cira-tv
     name: Çira TV
@@ -254,6 +284,7 @@ channels:
     category: Music
     language: kmr
     url_patterns: [cira-tv]
+    sites: [cira.tv]
 
   - id: trt-kurdi
     name: TRT Kurdî
@@ -262,6 +293,7 @@ channels:
     language: kmr
     country: TR
     url_patterns: [trtkurdi]
+    sites: [trt.com.tr, trtkurdi.com.tr]
 
   - id: med-muzik
     name: Med Muzik
@@ -269,6 +301,7 @@ channels:
     category: Music
     language: kmr
     url_patterns: [med-musik, medmuzik, /music/MUSIC2402/]
+    sites: [medmuzik.tv]
 
   - id: zarok-tv-kurmanci
     name: Zarok TV Kurmanci
@@ -276,6 +309,7 @@ channels:
     category: Kids
     language: kmr
     url_patterns: [zindikurmanci.zaroktv]
+    sites: [zaroktv.com.tr]
 
   - id: zarok-tv-sorani
     name: Zarok TV Sorani
@@ -283,6 +317,7 @@ channels:
     category: Kids
     language: ckb
     url_patterns: [zindisorani.zaroktv]
+    sites: [zaroktv.com.tr]
 
   - id: rojava-tv
     name: Rojava TV
@@ -311,7 +346,8 @@ channels:
     category: News
     language: ku
     country: IQ
-    url_patterns: [ava002.xyz, ava2.store/upload/images/]
+    url_patterns: [ava002.xyz, ava2.store/upload/images/, live/DB/AVA_TV]
+    sites: [ava.news]
 
   - id: ava-family
     name: AVA Family
@@ -322,6 +358,7 @@ channels:
     url_patterns: [familyhls.avatv.live]
 
   # ---------------------------------------------------------------- more Kurdish channels (found via iptv-org)
+
   - id: kurd-channel
     name: Kurd Channel
     aliases: [KurdCh, Kurdch TV, KurdChannel, Kurd Channel TV]
@@ -342,6 +379,7 @@ channels:
     category: Culture
     language: kmr
     url_patterns: [aryen.tv]
+    sites: [aryen.tv]
 
   - id: channel-8
     name: Channel 8
@@ -349,6 +387,7 @@ channels:
     category: News
     language: kmr
     url_patterns: [live.channel8.com]
+    sites: [channel8.com]
 
   - id: komala-tv
     name: Komala TV
@@ -356,10 +395,205 @@ channels:
     category: Culture
     language: ckb
     url_patterns: [komhls.wns.live]
+    sites: [tvkomala.com]
 
   - id: welat-tv
     name: Welat TV
     aliases: [Welat]
     category: News
     language: kmr
-    url_patterns: [stream.badinan.xyz/welat]
+    url_patterns: [stream.badinan.xyz/welat, stream.welattv.net]
+    sites: [welattv.net]
+
+  # ---------------------------------------------------------------- channels whose own site is the original source
+  # (they were found through iptv-org / community lists first; adding them here also lets their own domain count as original)
+  - id: ilke
+    name: Ilke TV
+    aliases: [Ilke, İlke TV, Ilke TV HD]
+    category: General
+    language: ku
+    country: TR
+    sites: [ilketv.com.tr]
+
+  - id: sercem
+    name: Sercem TV
+    aliases: [Sercem, Sercem TV HD]
+    category: Culture
+    language: ku
+    country: TR
+    sites: [sercemtv.com.tr]
+
+  - id: avar
+    name: Avar TV
+    aliases: [Avar, AVAR TV HD, Avar TV 1080p]
+    category: General
+    language: ku
+    country: IQ
+    sites: [avartv.net]
+
+  - id: 4-kurd
+    name: 4 Kurd
+    aliases: [4Kurd, 4 Kurd Live Online Kurdish TV Channels]
+    category: Music
+    language: ku
+    sites: [persiana.live]
+
+  # ---------------------------------------------------------------- more Kurdish channels (found in community lists)
+  # Each was checked by looking at a live frame of its stream (own logo / Kurdish on-screen text) before it was added.
+  # url_patterns matter here: a community list's label alone is not believed, its stream server is.
+  - id: qellat-tv
+    name: Qellat TV
+    aliases: [Qellat, Qellat HD, Qelat TV, Qalat TV, قەڵات]
+    category: Entertainment
+    language: ckb
+    country: IQ
+    url_patterns: [Qellat_tv]
+
+  - id: garyan-tv
+    name: Garyan TV
+    aliases: [Garyan Media, Garyan, Gariyan TV, Halabja Garyan]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [halabja88garyan]
+
+  - id: esra-tv
+    name: Esra TV
+    aliases: [Esra, ESRA HD, ESRA TV 1, ESRA TV 2, ESRA 2]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [giatv-esra]
+
+  - id: ranya-city
+    name: Ranya City TV
+    aliases: [Ranya City, Ranya TV, Ranya]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [ranya/ranyacity]
+
+  - id: halabja-tv
+    name: Halabja TV
+    aliases: [Halabja, Halabja TV HD, Helebja TV, Helebja, هەڵەبجە]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [halabjatv]
+
+  - id: red-tv
+    name: Red TV
+    aliases: [Red]
+    category: Entertainment
+    language: ckb
+    country: IQ
+    url_patterns: [/live/redtv]
+
+  - id: ala-tv
+    name: Ala TV
+    aliases: [Alla TV, Alla, Ala]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [/live/ala-hd]
+
+  - id: bask-tv
+    name: Bask TV
+    aliases: [Bask, Bask HD, Bask Plus, Bask Plus2, "Bask +"]
+    category: Entertainment
+    language: ckb
+    country: IQ
+    url_patterns: [baskhd.ddns.net:40/live/baskhd, baskhd2.ddns.net:1935/live/basktv]
+
+  - id: derin-tv
+    name: Derin TV
+    aliases: [Derin, Derin HD]
+    category: Music
+    language: ckb
+    country: IQ
+    url_patterns: [baskhd.ddns.net:40/live/derin]
+
+  - id: euro-kurd
+    name: Euro Kurd TV
+    aliases: [Eurokurd, Euro Kurd, EuroKurd TV]
+    category: Music
+    language: ckb
+    url_patterns: [/live/eurokurd]
+
+  - id: imk-tv
+    name: IMK TV
+    aliases: [IMK, IMK HD, IMK Kurdistan]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [imkhd.ddns.net]
+
+  - id: sada-tv
+    name: Sada TV
+    aliases: [Sada, Sada HD, Sada TV HD]
+    category: Religion
+    language: ckb
+    country: IQ
+    url_patterns: [/live/sadatv]
+
+  - id: shna-tv
+    name: Shna TV
+    aliases: [Shna, Shna HD]
+    category: Religion
+    language: ckb
+    country: IQ
+    url_patterns: [shnatv.ddns.net]
+
+  - id: wala-tv
+    name: Wala TV
+    aliases: [Walla TV, Wala Chamchamal TV, Walla, Wala]
+    category: Religion
+    language: ckb
+    country: IQ
+    url_patterns: [giatv-wallatv88]
+
+  - id: parwarda-tv
+    name: Parwarda TV
+    aliases: [Parwarda, Parwarda TV Sulaimaniah, Parwarday Slemani TV, Perwarda TV]
+    category: Education
+    language: ckb
+    country: IQ
+    url_patterns: [giatv-parwardasuli]
+
+  - id: gem-kids
+    name: GEM Kids
+    aliases: [Gem Kids TV, Gewher Kids, Gewhar Kids]
+    category: Kids
+    language: ckb
+    country: IQ
+    url_patterns: [cdn.karwan.tv/gewher-kids]
+
+  - id: kurd-7
+    name: Kurd 7
+    aliases: [Kurd7, Kurd 7 HD, Kurd7 HD]
+    category: General
+    language: ckb
+    url_patterns: [kurd7hd]
+
+  - id: befrin-tv
+    name: Befrin TV
+    aliases: [Befrin, Befrin HD, Befrîn TV]
+    category: General
+    language: ku
+    url_patterns: [cdn.karwan.tv/befrin-tv]
+
+  - id: rojhelat-tv
+    name: Rojhelat TV
+    aliases: [Rojhelat, Rojhilat TV]
+    category: General
+    language: ckb
+    country: IR
+    url_patterns: [live/db/rojhelat]
+
+  - id: infinity-tv
+    name: Infinity TV
+    aliases: [Infinity, Infinity HD]
+    category: Entertainment
+    language: ckb
+    country: IQ
+    url_patterns: [cdn.karwan.tv/infinity-tv]

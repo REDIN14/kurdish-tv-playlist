@@ -41,8 +41,10 @@ discover → normalise → match / de-duplicate → probe → rank → logos →
 3. **Probe** – each stream is fetched like a player would: playlist → best variant → a real media segment. Resolution,
    frame rate and codecs are *measured* with `ffprobe` when it is installed, never taken from the URL or the playlist's claims.
    Dead, frozen (playlist stops advancing), encrypted, audio-only and non-HLS URLs are rejected.
-4. **Rank** – verified resolution → bitrate/fps → latency/failures → source stability. A failing primary is replaced by a healthy
-   fallback after 3 consecutive failures; fallbacks must live on a *different server*.
+4. **Rank** – the broadcaster's **own stream first** (found on its own web page, or served from its own domain) while it works,
+   then verified resolution → bitrate/fps → latency/failures → source stability. A failing primary is replaced by a healthy
+   fallback after 3 consecutive failures; fallbacks must live on a *different server*. A stream whose playlist announces H.264 but
+   whose video is something else (what a CDN serves instead of a channel it has blocked) is rejected.
 5. **Validate + publish** – the new playlist replaces the old one atomically, and only if it passes checks (never empty,
    never less than half of the previous one, no credentials in any URL). The last 3 snapshots are kept (`kurdiptv rollback`).
 
@@ -58,7 +60,8 @@ If this machine loses its internet connection, a run is abandoned and **nothing*
 | kurditv.com | the site's WordPress REST API + the `vembed_data` call its own player makes | works |
 | semir.site123.me | tile grid → player pages on `wapsite.me`; titles on that page are unreliable, so names come from link targets and must be corroborated | works (low trust) |
 | iptv-org | the community-maintained list of publicly available streams (Kurdish-language list, plus two channels from its Iraq/Syria lists) | works; several channels here have current links where the pages above are stale |
-| broadcasters' own pages | `adapter: official` reads each channel's live page and takes the stream address its player uses | works; confirms most addresses and revives a channel automatically if its broadcaster repairs a stream |
+| broadcasters' own pages | `adapter: official` reads each channel's live page and takes the stream address its player uses; **these are the original sources and are listed first** | works; confirms most addresses and revives a channel automatically if its broadcaster repairs a stream |
+| Kurdish lists on GitHub | five community-maintained M3U files (`list-*` in `settings.yaml`); they carry current addresses of small channels the aggregator pages list with dead links. They can only add streams to channels in `catalog.yaml` (their labels are unreliable and they mix in world sports, pay-TV and cartoons) | works |
 | karwan.tv | **behind a Cloudflare bot challenge** | reported as `blocked`; never circumvented. It starts working by itself if the site owner lets this aggregator in. |
 
 Channels that are listed by the sources but not in the playlist have no working public stream today. Their own sites
@@ -66,6 +69,12 @@ were checked: KNN and Kirkuk TV's pages point at servers that are gone or return
 non-browser clients, NRT, Speda, Kurdsat and AVA's sites block automated access (bot challenges), and AVA
 Entertainment, Aryen TV, Korek TV and Net TV's sites are offline. Every address ever found stays in the database and
 is re-tested with growing delays, so such a channel appears by itself when its stream returns.
+
+The source sites also show channels that play in the browser but cannot be put in a playlist: kurdtvs.net and semir.site123.me
+embed YouTube live streams (Net TV, Newline, Rasan TV, Zikrakani...) or ok.ru video players (UTV Hawler, NewMax Kids, Waar TV's
+and Duhok Sport's tiles) - there is no stream address in those pages, only a web player. karwan.tv, the largest list, answers every
+automated request with a Cloudflare challenge and is never circumvented. Streams whose server demands a browser `Referer`
+(Kurdmax, Zoom News) are not imitated either: that header is how the broadcaster restricts a stream to its own site.
 
 Built in: `robots.txt` is honoured for every page fetched; one request per second per source, a request budget per run,
 page caching with conditional requests; a descriptive User-Agent; private/loopback addresses are refused (SSRF guard, also

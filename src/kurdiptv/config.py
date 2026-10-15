@@ -93,6 +93,13 @@ class SourceConfig:
     url: str
     enabled: bool = True
     trust: str = "high"  # high: unknown channels are published; low: only recognisably Kurdish ones
+    # A community-maintained list (somebody's M3U on GitHub) mixes Kurdish channels with world sports, pay-TV and cartoons and
+    # its labels are not reliable. With catalog_only the list can add streams to channels that are in catalog.yaml (or that
+    # another source already lists), but it cannot introduce a channel by itself and never counts as corroboration.
+    catalog_only: bool = False
+    # The source reads the broadcasters' own web pages: a stream it finds there is the channel's original source and is
+    # preferred over the same channel's copies on aggregator sites and community lists.
+    official: bool = False
     min_interval: float = 1.0
     max_requests: int = 200
     page_ttl_hours: float = 12.0
@@ -186,6 +193,9 @@ def _validate(settings: Settings) -> None:
         seen.add(src.id)
         if src.trust not in {"high", "low"}:
             raise ConfigError(f"source {src.id}: trust must be high or low")
+        for flag in ("catalog_only", "official"):
+            if not isinstance(getattr(src, flag), bool):
+                raise ConfigError(f"source {src.id}: {flag} must be true or false")
         if not src.url:
             raise ConfigError(f"source {src.id}: url is required")
 

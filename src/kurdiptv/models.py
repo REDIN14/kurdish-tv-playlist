@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# Tag an adapter puts on a stream whose source lists it without any language / country / category information
+# (a bare channel page on a site that also carries Turkish, Arabic and international TV).
+UNCLASSIFIED = "unclassified"
+
 
 @dataclass
 class RawCandidate:

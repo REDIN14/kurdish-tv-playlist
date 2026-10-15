@@ -26,6 +26,7 @@ class PublishedStream:
     latency_ms: int | None = None
     vcodec: str = ""
     acodec: str = ""
+    official: bool = False  # the broadcaster's own stream (see rank.py)
 
 
 @dataclass

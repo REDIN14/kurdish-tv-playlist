@@ -71,7 +71,7 @@ sources:
     url: https://kurdtvs.net/
     trust: high
     min_interval: 1.0
-    max_requests: 150
+    max_requests: 200
     page_ttl_hours: 12
     options:
       playlist_path: /iptv.php?format=m3u
@@ -130,7 +130,8 @@ sources:
     options:
       only: [Welat TV]
 
-  # The broadcasters' own pages, re-read at every refresh. They confirm the addresses already in the list and bring a
+  # The broadcasters' own pages, re-read at every refresh. A stream found here is the channel's ORIGINAL source ("official: true"):
+  # it is listed first while it works, ahead of copies on aggregator sites and community lists. The pages also bring a
   # channel back by itself the day its broadcaster repairs or moves its stream (Kirkuk TV, KNN, Kurdmax and Aryen TV
   # point at servers that are offline or refuse outside players today). Sites that block automated access
   # (NRT, Speda, Kurdsat, AVA: bot challenges) or forbid it in robots.txt (Waar) are left out. "only" keeps one
@@ -139,6 +140,7 @@ sources:
     adapter: official
     url: https://www.kurdistantv.net/ku/live
     trust: high
+    official: true
     min_interval: 1.0
     max_requests: 40
     page_ttl_hours: 12
@@ -159,6 +161,59 @@ sources:
         - {name: "KNN",                pages: ["https://www.knnc.net/live1.aspx"]}
         - {name: "Kurdmax Sorani",     pages: ["https://kurdmax.tv/live-stream"]}
         - {name: "Aryen TV",           pages: ["https://aryen.tv/"]}
+        - {name: "Welat TV",           pages: ["https://www.welattv.net/live-page"]}
+        - {name: "4 Kurd",             pages: ["https://4kurd.persiana.live/"]}
+
+  # Community-maintained Kurdish lists on GitHub (somebody's M3U). They are the best place to find current addresses of small
+  # channels the aggregator pages list with dead links, but their labels are unreliable and they mix in world sports, pay-TV
+  # and cartoons. "catalog_only": a list can add streams to a channel that is in catalog.yaml (or that another source
+  # already lists), it can never introduce a channel itself and it never counts as corroboration. Dead links in them are
+  # simply never published (every stream is probed). Chosen because together they carry the working addresses of the channels
+  # added to catalog.yaml from them; a list that disappears only costs its backups.
+  - id: list-zheer88
+    adapter: m3u
+    url: https://raw.githubusercontent.com/Zheer88/Kurdish-TV/main/playlist.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  - id: list-hersh
+    adapter: m3u
+    url: https://raw.githubusercontent.com/hershsaeed/Hersh/main/KURD%20%2B.txt
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  - id: list-bashdar
+    adapter: m3u
+    url: https://raw.githubusercontent.com/Bashdarsarbaz/Kurdish-TV/main/Bashdar.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  - id: list-qsnoramedi
+    adapter: m3u
+    url: https://raw.githubusercontent.com/qsnoramedi5-commits/kurdishtv_channels/main/kurdishtv_channels.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  - id: list-6ebeng
+    adapter: m3u
+    url: https://raw.githubusercontent.com/6ebeng/Kurdish-Playlist-IPTV-M3U/main/Chennels.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
 
   # karwan.tv sits behind a Cloudflare bot challenge. The adapter makes one honest request and
   # reports "blocked" - it never tries to get around the challenge. It starts working by itself

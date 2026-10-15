@@ -45,7 +45,7 @@ class Offline(RuntimeError):
 def _stream_from_state(s: CandState) -> PublishedStream:
     return PublishedStream(
         cid=s.cid, url=s.url, source_id=s.source_id, height=s.height, width=s.width, fps=s.fps, bitrate=s.bitrate,
-        verified=s.verified, latency_ms=s.latency_ms, vcodec=s.vcodec, acodec=s.acodec,
+        verified=s.verified, latency_ms=s.latency_ms, vcodec=s.vcodec, acodec=s.acodec, official=s.official,
     )
 
 
@@ -69,12 +69,17 @@ def _trust_map(app: App) -> dict[str, str]:
 def _states_for(app: App, cids: list[int]) -> list[CandState]:
     """Candidate states for ranking: one per distinct stream URL (the same URL from two sources is one stream)."""
     trust = _trust_map(app)
+    official_sources = {src.id for src in app.settings.sources if src.official}
     loaded = sorted(load_states(app.db, cids).values(), key=lambda s: s.cid)
     for s in loaded:
         s.trust = trust.get(s.source_id, "low")
+    # The broadcaster's own stream: its own web page lists it, or it is served from the channel's own web domain.
+    official_urls = {url_key(s.url) for s in loaded if s.source_id in official_sources}
     best: dict[str, CandState] = {}
     for s in loaded:
         key = url_key(s.url)
+        channel = app.catalog.by_id.get(s.channel_id or "")
+        s.official = key in official_urls or bool(channel and channel.is_original(s.url))
         known = best.get(key)
         if known is None or (s.trust == "high" and known.trust != "high"):
             best[key] = s

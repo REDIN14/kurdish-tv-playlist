@@ -40,6 +40,7 @@ class CandState:
     vcodec: str = ""
     acodec: str = ""
     service: str = ""
+    official: bool = False  # the broadcaster's own stream (found on its own web page, or served from its own domain)
 
     @property
     def success_ratio(self) -> float:

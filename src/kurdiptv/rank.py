@@ -1,6 +1,7 @@
 """Order a channel's candidate streams: best first, with failover candidates behind it.
 
 Order of preference (README / plan):
+  0. a pinned URL, then the broadcaster's own ("official") stream while it works
   1. reachable HLS with the highest *verified* resolution
   2. higher verified bitrate, then frame rate, when resolution is equal
   3. lower measured latency, fewer recent failures
@@ -62,6 +63,7 @@ def sort_key(s: CandState, preferred: list[str], pinned: str | None):
     pref = preferred.index(s.source_id) if s.source_id in preferred else len(preferred)
     return (
         pinned_first,
+        0 if s.official else 1,  # the broadcaster's own stream beats copies of it, as long as it works
         -(s.height or 0) if s.verified else 0,  # verified resolution first
         -(s.height or 0),  # then claimed resolution among unverified
         -bitrate_bucket(s.bitrate or s.bandwidth),

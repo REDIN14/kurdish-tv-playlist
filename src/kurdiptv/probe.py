@@ -80,6 +80,21 @@ def _fps(value: str | None) -> float | None:
         return None
 
 
+def _declared_video_codec(codecs: str) -> str:
+    """The ffprobe name of the video codec a master playlist's CODECS attribute announces ("" when it says nothing usable)."""
+    for item in codecs.lower().split(","):
+        item = item.strip()
+        if item.startswith(("avc1", "avc3")):
+            return "h264"
+        if item.startswith(("hvc1", "hev1")):
+            return "hevc"
+        if item.startswith("vp09"):
+            return "vp9"
+        if item.startswith("av01"):
+            return "av1"
+    return ""
+
+
 _GENERIC_SERVICE = {"", "service01", "service", "unknown", "ffmpeg", "mpegts", "digital tv", "wowza", "nimble", "streamer", "hls"}
 
 
@@ -294,6 +309,13 @@ class Prober:
             result.width, result.height = int(v["width"]), int(v["height"])
             result.fps = _fps(v.get("avg_frame_rate")) or _fps(v.get("r_frame_rate")) or result.fps
             result.vcodec = v.get("codec_name", "")
+            declared = _declared_video_codec(variant.codecs) if variant else ""
+            if declared and result.vcodec and declared != result.vcodec:
+                # e.g. a master that announces H.264 720p/1080p while every segment is a 640x480 MPEG-2 clip: what a CDN serves
+                # instead of the channel once it blocks the stream ("This video has been restricted ...").
+                result.error = f"the playlist announces {declared} video but the stream carries {result.vcodec}: not the real channel"
+                result.verified = False
+                return False
             a = next((s for s in streams if s.get("codec_type") == "audio"), None)
             result.acodec = (a or {}).get("codec_name", "")
             result.service = _service_label(info)

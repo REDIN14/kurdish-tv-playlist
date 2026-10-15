@@ -17,11 +17,20 @@ _AUTH_QUERY_KEYS = {
     "token", "access_token", "auth", "authorization", "key", "apikey", "api_key", "password", "pass", "pwd", "passwd",
     "user", "username", "login", "sig", "signature", "expires", "expire", "exp", "hdnts", "hdnea", "wmsauthsign",
     "hmac", "secret", "session", "sessionid", "sid", "e", "st", "policy", "key-pair-id", "x-amz-signature",
+    "mac",  # Stalker-portal reseller URLs carry a subscriber's device address: /play/live.php?mac=00:1A:79:..&stream=...
 }
-# Query parameters that only carry a session id and can safely be dropped.
-EPHEMERAL_QUERY_KEYS = {"nimblesessionid", "nimblesession"}
+# Query parameters that only carry a session id or a playback offset and can safely be dropped. "utc"/"lutc" are Wowza start
+# times (a catch-up position: kept, the stream would stay stuck at that moment); some list authors tag entries "?checkedby:name".
+EPHEMERAL_QUERY_KEYS = {"nimblesessionid", "nimblesession", "utc", "lutc"}
+
+
+def _is_ephemeral(key: str) -> bool:
+    key = key.lower()
+    return key in EPHEMERAL_QUERY_KEYS or key.startswith("checkedby")
 # Xtream-Codes style panel URLs embed the subscriber's username and password in the path.
 _XTREAM_PATH = re.compile(r"^/(?:live|movie|series|streaming)/[^/]+/[^/]+/\d+\.(?:m3u8|ts)$", re.IGNORECASE)
+# The older panel form has no "/live/" and no extension: /<user>/<password>/<stream id> (also /<device MAC>/<code>/<id>).
+_PANEL_PATH = re.compile(r"^/(?!(?:live|hls|stream|streams|video|channel|channels)/)[^/]+/[^/]+/\d{3,}$", re.IGNORECASE)
 _GET_PHP = re.compile(r"/(?:get|player_api|panel_api)\.php", re.IGNORECASE)
 
 
@@ -29,7 +38,7 @@ def strip_ephemeral_query(url: str) -> str:
     parts = urlsplit(url)
     if not parts.query:
         return url
-    kept = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k.lower() not in EPHEMERAL_QUERY_KEYS]
+    kept = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if not _is_ephemeral(k)]
     if len(kept) == len(parse_qsl(parts.query, keep_blank_values=True)):
         return url
     query = "&".join(f"{k}={v}" if v != "" else k for k, v in kept)
@@ -51,7 +60,7 @@ def credential_reason(url: str) -> str | None:
     parts = urlsplit(url)
     if parts.username or parts.password:
         return "credentials in URL"
-    if _XTREAM_PATH.match(parts.path):
+    if _XTREAM_PATH.match(parts.path) or _PANEL_PATH.match(parts.path):
         return "panel URL with user name and password in the path"
     if _GET_PHP.search(parts.path) and parts.query:
         return "panel API URL"

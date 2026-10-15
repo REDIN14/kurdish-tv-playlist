@@ -20,7 +20,7 @@ LANGUAGE_NAMES = {
     "fa": "Persian",
 }
 
-_FIELDS = {"id", "name", "aliases", "category", "language", "country", "url_patterns", "logo"}
+_FIELDS = {"id", "name", "aliases", "category", "language", "country", "url_patterns", "sites", "own_servers", "logo"}
 
 
 @dataclass(frozen=True)
@@ -32,8 +32,18 @@ class CatalogChannel:
     language: str = ""
     country: str = ""
     url_patterns: tuple[str, ...] = ()
+    sites: tuple[str, ...] = ()  # the broadcaster's own web domains: a stream served from one of them is the original source
+    own_servers: tuple[str, ...] = ()  # "host/path" fragments of the broadcaster's own account on a CDN or hosting provider
     logo: str = ""
     keys: frozenset[str] = frozenset()
+
+    def is_original(self, url: str) -> bool:
+        """The stream comes from the broadcaster itself: its own domain, or its own account on a hosting provider."""
+        host = (urlsplit(url).hostname or "").lower().rstrip(".")
+        if any(host == d or host.endswith("." + d) for d in self.sites):
+            return True
+        target = url_target(url)
+        return any(fragment in target for fragment in self.own_servers)
 
 
 def url_target(url: str) -> str:
@@ -83,6 +93,8 @@ class Catalog:
                     language=str(raw.get("language") or ""),
                     country=str(raw.get("country") or ""),
                     url_patterns=tuple(str(p) for p in raw.get("url_patterns") or []),
+                    sites=tuple(str(s).lower().strip().removeprefix("www.") for s in raw.get("sites") or []),
+                    own_servers=tuple(str(s).lower().strip() for s in raw.get("own_servers") or []),
                     logo=str(raw.get("logo") or ""),
                     keys=frozenset(keys),
                 )

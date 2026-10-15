@@ -1,4 +1,8 @@
-"""kurdtvs.net: a published dynamic M3U plus one player page per channel (Clappr, `const streams = [...]`)."""
+"""kurdtvs.net: a published dynamic M3U plus one player page per channel (Clappr, `const streams = [...]`).
+
+The home page is paginated (`/?page=2` ...) and lists Turkish, Arabic and international channels next to the Kurdish ones. The M3U
+carries group tags ("Local", "Kurdish", "Turkish"...); a stream found only on a channel page has no such tag, so it is marked
+`unclassified` and the scope rules ask for other evidence that it is Kurdish before it is published."""
 
 from __future__ import annotations
 
@@ -10,7 +14,7 @@ from bs4 import BeautifulSoup
 
 from ..fetcher import FetchProblem
 from ..m3u import parse_m3u
-from ..models import RawCandidate
+from ..models import UNCLASSIFIED, RawCandidate
 from ..normalize import fix_mojibake
 from .base import SourceAdapter
 from .m3u import candidate_from_entry
@@ -48,17 +52,33 @@ class KurdTvsAdapter(SourceAdapter):
                 self.add(cand)
                 listed += 1
 
+        listed_keys = set(self.found)
+
         # 2. Each channel's player page: extra URLs (not in the playlist), og:image logo, clean title.
         if self.opt("follow_channel_pages", True):
             home = await self.fetcher.get_optional(base)
             if home is None:
                 self.notes.append("home page unavailable; channel pages skipped")
                 return
-            for path in self._channel_links(home.text):
+            paths = self._channel_links(home.text)
+            # The listing continues on /?page=2, /?page=3 ... until a page brings nothing new.
+            for number in range(2, int(self.opt("max_home_pages", 6)) + 1):
+                more = await self.fetcher.get_optional(urljoin(base, f"/?page={number}"))
+                if more is None:
+                    break
+                fresh = [p for p in self._channel_links(more.text) if p not in paths]
+                if not fresh:
+                    break
+                paths.extend(fresh)
+            for path in paths:
                 page = await self.fetcher.get_optional(urljoin(base, path))
                 if page is None:
                     continue
                 self._parse_channel_page(page.text, page.url)
+
+        for key, cand in self.found.items():
+            if key not in listed_keys and UNCLASSIFIED not in cand.tags:
+                cand.tags = cand.tags + (UNCLASSIFIED,)
 
         if listed == 0 and not self.found:
             self.notes.append("neither the playlist nor channel pages yielded streams")

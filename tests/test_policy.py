@@ -20,6 +20,9 @@ def policy():
     [
         "http://user:secret@host.example/live.m3u8",
         "http://185.166.25.198:25461/live/kurdcinema/kurdcinema/1576.m3u8",  # Xtream-Codes: user/pass in the path
+        "http://xlion.net:8080/Clinetcaca/YeAlqDTUc9/429654",  # older panel form: /user/password/stream id
+        "http://line.4k-beast.co:80/c0:23:8d:96:15:22/44D11F/3843",  # reseller: a device address in the path
+        "http://ztv01.info:8080/play/live.php?mac=00:1A:79:6E:2A:20&stream=802141&extension=m3u8",  # portal with a device MAC
         "http://panel.example/get.php?username=a&password=b&type=m3u",
         "http://wowzaprod219-i.akamaihd.net/hls/live/1003949/x/playlist.m3u8?wmsAuthSign=abc",
         "https://cdn.example/live/a.m3u8?token=abcdef",
@@ -36,6 +39,8 @@ def test_credentialed_urls_are_rejected(url):
         "https://live.rudaw.net/hls/rudaw-tv/master.m3u8",
         "http://bblserver.ddns.net:1935/stream/khakhd/playlist.m3u8",
         "https://cdn.example/live/channel/index.m3u8?stream=1",
+        "https://cdn.example/live/channel/12345",  # numeric id but no user/password pair
+        "http://avrstream.com:1935/live/ala-hd/playlist.m3u8",
     ],
 )
 def test_plain_urls_are_accepted(url):
@@ -47,6 +52,14 @@ def test_session_ids_are_stripped_not_rejected():
     assert strip_ephemeral_query(url) == "http://wowzaprod219-i.akamaihd.net/hls/live/1003949/c9aa559e/playlist.m3u8"
     assert strip_ephemeral_query("http://a/b.m3u8?x=1&nimblesessionid=2") == "http://a/b.m3u8?x=1"
     assert strip_ephemeral_query("http://a/b.m3u8") == "http://a/b.m3u8"
+    # catch-up offsets and list authors' tags would freeze the stream at one moment / make one stream look like several
+    assert strip_ephemeral_query("http://imkhd.ddns.net:1935/live/imkhd/playlist.m3u8?utc=1775999248&lutc=1776000661") == (
+        "http://imkhd.ddns.net:1935/live/imkhd/playlist.m3u8"
+    )
+    assert strip_ephemeral_query("http://sada-hd.ddns.net:40/live/sadatv/index.m3u8?checkedby:kurdtv1") == (
+        "http://sada-hd.ddns.net:40/live/sadatv/index.m3u8"
+    )
+    assert strip_ephemeral_query("http://a/b.m3u8?k=v&checkedby:x") == "http://a/b.m3u8?k=v"
 
 
 # ---- brands / scope -------------------------------------------------------------------------------------------------------------

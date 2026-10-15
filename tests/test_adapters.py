@@ -80,6 +80,23 @@ async def test_kurdtvs_reads_playlist_and_channel_pages(web, settings):
     assert res.skipped.get("page-without-player") == 1  # the YouTube-embed page
 
 
+async def test_kurdtvs_follows_the_paginated_home_page_and_marks_unlisted_channels_unclassified(web, settings):
+    routes_kurdtvs(web)
+    web.add("https://kurdtvs.net/?page=2", text=fixture_text("kurdtvs_home_page2.html"))
+    web.add("https://kurdtvs.net/?page=3", text="<html><body><a href='/shar-tv'>Shar</a></body></html>")  # nothing new: stop here
+    web.add("https://kurdtvs.net/shar-tv", text=fixture_text("kurdtvs_page_shar.html"))
+    web.add("https://kurdtvs.net/world-news-tv", text=fixture_text("kurdtvs_page_world.html"))
+    res = await run(web, settings, "kurdtvs")
+    cands = by_url(res)
+    shar = cands["https://shar.example.tv/live/shar/master.m3u8"]
+    world = cands["https://world.example.tv/live/news.m3u8"]
+    assert "unclassified" in shar.tags and "unclassified" in world.tags  # on no list the site publishes, so no language is known
+    rudaw = cands["https://live.rudaw.net/hls/rudaw-tv/master.m3u8"]
+    assert "unclassified" not in rudaw.tags  # the site's own playlist classified this one ("Kurdish")
+    assert web.count("page=3") == 1 and web.count("page=4") == 0  # a page without new channels ends the pagination
+    assert web.count("/zagros-tv") == 1  # linked on both pages, read once
+
+
 async def test_kurdtvs_survives_a_missing_playlist(web, settings):
     routes_kurdtvs(web)
     del web.routes["https://kurdtvs.net/iptv.php?format=m3u"]  # playlist 404s

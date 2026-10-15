@@ -30,8 +30,14 @@ def copy_config(tmp_path, **replacements):
 
 def test_shipped_configuration_is_valid_and_complete():
     s = load_settings(config_dir=REPO / "config", data_dir=REPO / ".pytest_tmp" / "cfgcheck")
-    assert [x.id for x in s.sources] == ["kurdtvs", "kurditv", "site123", "iptvorg", "iptvorg-iq", "iptvorg-sy", "official", "karwan"]
-    assert next(x for x in s.sources if x.id == "official").options["channels"]  # the broadcasters' own pages are configured
+    lists = ["list-zheer88", "list-hersh", "list-bashdar", "list-qsnoramedi", "list-6ebeng"]
+    assert [x.id for x in s.sources] == ["kurdtvs", "kurditv", "site123", "iptvorg", "iptvorg-iq", "iptvorg-sy", "official", *lists, "karwan"]
+    official = next(x for x in s.sources if x.id == "official")
+    assert official.options["channels"] and official.official  # the broadcasters' own pages are configured and count as original
+    assert [x.id for x in s.sources if x.official] == ["official"]
+    # community lists may only add streams to channels known elsewhere
+    assert all(x.catalog_only and x.trust == "low" for x in s.sources if x.id in lists)
+    assert not any(x.catalog_only for x in s.sources if x.id not in lists)
     assert s.service.refresh_interval_hours == 6 and s.service.health_interval_minutes == 15
     assert s.service.refresh_on_startup and s.publish.keep_snapshots == 3
     trust = {x.id: x.trust for x in s.sources}
@@ -65,7 +71,9 @@ def test_environment_overrides(monkeypatch):
         ("service:\n  host", "service:\n  prot: 1\n  host", "unknown key"),
         ("fallback_mode: group", "fallback_mode: sideways", "fallback_mode"),
         ("fail_threshold: 3", "fail_threshold: 0", "fail_threshold"),
-        ("trust: high\n    min_interval: 1.0\n    max_requests: 150", "trust: maybe\n    min_interval: 1.0\n    max_requests: 150", "trust"),
+        ("trust: high\n    min_interval: 1.0\n    max_requests: 200", "trust: maybe\n    min_interval: 1.0\n    max_requests: 200", "trust"),
+        ("catalog_only: true", "catalog_only: sometimes", "catalog_only"),
+        ("official: true", "official: yes please", "official"),
         ("min_ratio_of_previous: 0.5", "min_ratio_of_previous: 1.5", "min_ratio"),
         ("- id: kurditv", "- id: kurdtvs", "duplicate source"),
     ],
