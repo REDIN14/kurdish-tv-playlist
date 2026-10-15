@@ -1,0 +1,11 @@
+# runtime state (databases, logos, snapshots) - never commit
+/data/
+.pytest_tmp/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+dist/
+.env

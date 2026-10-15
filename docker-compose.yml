@@ -1,0 +1,17 @@
+services:
+  kurdiptv:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      # Public address of the playlist (used for logo links). Leave empty to derive it from each request.
+      KURDIPTV_PUBLIC_URL: ""
+      # Optional: a URL or address site owners can use to reach you (appended to the User-Agent)
+      KURDIPTV_CONTACT: ""
+    volumes:
+      - kurdiptv-data:/data          # database, logos, snapshots - survives upgrades
+      - ./config:/app/config:ro      # edit catalog.yaml / policy.yaml / settings.yaml here
+
+volumes:
+  kurdiptv-data:

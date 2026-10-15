@@ -1,0 +1,111 @@
+# Kurdish IPTV aggregator - main settings.
+# Everything here has a sensible default; edit only what you need.
+# Environment overrides: KURDIPTV_PUBLIC_URL, KURDIPTV_HOST, KURDIPTV_PORT,
+# KURDIPTV_DATA_DIR, KURDIPTV_CONFIG_DIR, KURDIPTV_CONTACT, KURDIPTV_ADMIN_TOKEN.
+
+service:
+  host: 127.0.0.1                # this PC only. 0.0.0.0 = also phones/TVs on your network (see scripts\install-autostart.ps1 -AllowLan)
+  port: 8787
+  # Public address of the playlist, used for logo links inside the M3U
+  # (e.g. https://example.org/kurdish-tv). Empty = derive from each request.
+  public_base_url: ""
+  refresh_on_startup: true       # startup refresh never blocks serving the last good playlist
+  refresh_interval_hours: 6
+  health_interval_minutes: 15
+  rate_limit_per_minute: 120     # per client IP, public endpoints
+
+http:
+  # Descriptive User-Agent sent to source sites. "contact" (optional) is appended
+  # so site owners can reach you - set it to a URL or address you are happy to share.
+  user_agent: "KurdishIPTVAggregator/1.0 (personal playlist aggregator; honours robots.txt)"
+  contact: ""
+  connect_timeout: 8
+  read_timeout: 20
+  respect_robots: true
+  allow_private_hosts: false     # SSRF guard: refuse stream/logo hosts on private networks
+  verify_tls: true
+
+probe:
+  concurrency: 10                # simultaneous probes overall
+  per_host_concurrency: 2        # ... and per stream host
+  per_host_min_interval: 0.15    # seconds between requests to one host
+  playlist_timeout: 12
+  segment_timeout: 20
+  max_playlist_bytes: 1000000
+  max_segment_bytes: 6000000
+  verify_with_ffprobe: true      # measure real resolution/fps/codec when ffprobe is installed
+  ffprobe_path: ""               # empty = look on PATH
+  ok_ttl_seconds: 900            # a good probe is reused for this long
+  backoff_base_seconds: 900      # failed candidates are re-probed after 15 min, 30 min, 1 h ... (cap below)
+  backoff_max_seconds: 86400
+  fail_threshold: 3              # consecutive failures before a fallback is promoted
+  max_variants_tried: 2
+  max_fallbacks: 3               # extra URLs kept per channel
+  same_host_fallbacks: false     # false: a fallback must live on a different server than the primary
+  keep_stale_hours: 72           # keep a previously verified channel this long while all its URLs fail
+  stall_seconds: 600             # a live playlist that does not advance for this long counts as frozen
+
+publish:
+  keep_snapshots: 3
+  min_channels: 5                # never publish fewer channels than this
+  min_ratio_of_previous: 0.5     # ... or less than this share of the previous playlist
+  fallback_mode: group           # group: backups in a separate group | inline | none
+  backup_group: "Backup streams"
+  playlist_title: "Kurdish TV"
+
+logos:
+  max_bytes: 1000000
+  min_px: 48
+  max_px: 4096
+  output_px: 512
+  ttl_days: 7
+  use_catalog: true              # iptv-org channel-logo catalog
+  catalog_channels_url: https://iptv-org.github.io/api/channels.json
+  catalog_logos_url: https://iptv-org.github.io/api/logos.json
+
+# One entry per source. Add another site/playlist here (no code change needed for
+# plain M3U playlists: adapter "m3u"). trust "low" = only recognisably Kurdish channels are published.
+sources:
+  - id: kurdtvs
+    adapter: kurdtvs
+    url: https://kurdtvs.net/
+    trust: high
+    min_interval: 1.0
+    max_requests: 150
+    page_ttl_hours: 12
+    options:
+      playlist_path: /iptv.php?format=m3u
+      follow_channel_pages: true
+
+  - id: kurditv
+    adapter: kurditv
+    url: https://kurditv.com/
+    trust: high
+    min_interval: 1.0
+    max_requests: 120
+    page_ttl_hours: 12
+    options:
+      # only posts in these categories are Kurdish live channels (others are Arabic/Turkish/German TV)
+      include_categories: ["weşana zindî"]
+
+  - id: site123
+    adapter: site123
+    url: https://semir.site123.me/kurdish-tv-live
+    trust: low
+    min_interval: 1.0
+    max_requests: 200
+    page_ttl_hours: 24
+    options:
+      follow_links: true
+      skip_categories: ["sport"]
+
+  # karwan.tv sits behind a Cloudflare bot challenge. The adapter makes one honest request and
+  # reports "blocked" - it never tries to get around the challenge. It starts working by itself
+  # if the site owner allows this aggregator.
+  - id: karwan
+    adapter: html_scan
+    url: https://karwan.tv/
+    trust: low
+    min_interval: 2.0
+    max_requests: 20
+    page_ttl_hours: 12

@@ -1,0 +1,75 @@
+# What may be published, and manual overrides.
+#
+# The aggregator only ever publishes LINKS to streams other people operate; it never relays video.
+# This file keeps the playlist to Kurdish channels and out of rights-sensitive territory.
+
+# ---- scope ---------------------------------------------------------------------------------------------------
+scope:
+  # Channels not in catalog.yaml:
+  #   high-trust sources (kurdtvs, kurditv): published automatically (flagged "new, unreviewed" in the report)
+  #   other sources: published only if the name is corroborated by the stream URL or a second source
+  unknown_from_trusted: include        # include | review (review = report only, do not publish)
+  require_corroboration_from_low_trust: true
+  # Source tags that mean "not a Kurdish-language channel" (kurdtvs tags e.g. "Turkish", "Arabic", "English")
+  foreign_tags: [turkish, arabic, english, german, persian, farsi, french, russian, spanish, urdu, hindi]
+  # Tags / name parts that mean Kurdish ("local" is how kurdtvs.net tags Kurdistan-based channels)
+  kurdish_markers: [kurd, kurdi, kurdish, kurdistan, kurmanci, kurmanji, sorani, surani, badini, badinan, zazaki, rojava, rojhelat, local]
+  # Name or URL contains one of these -> rights-sensitive (sports, films): not published unless listed in catalog.yaml
+  rights_sensitive_words: [sport, cinema, sinema, movie, film]
+
+# ---- takedowns / never publish -----------------------------------------------------------------------------------
+# Add anything a rights holder or site owner asks you to remove. Matches are case-insensitive.
+blocklist:
+  channel_ids: []        # e.g. [some-channel-id]
+  names: []              # e.g. ["Some Channel"]  (compared after name normalisation)
+  hosts: []              # stream host, e.g. ["badserver.example"]
+  url_contains: []       # any substring of a stream URL
+
+# ---- brands that are not Kurdish TV (commercial pay-TV, sports, international networks) -----------------------------
+# tokens : whole word of the channel name or stream URL; "mbc*" = any word starting with mbc.
+#          Words shorter than 4 characters are only checked against the channel NAME, never the URL.
+# url_tokens: whole words of the stream URL only, any length (for distinctive short ones like zdf).
+# phrases: several words, checked against the channel name.
+# Catalog channels (catalog.yaml) are never denied by name; their stream URLs are still checked.
+deny_brands:
+  - name: Sports and pay-TV
+    tokens: [eurosport, bein, beinsports, setanta, aspor, dazn, espn, realmadrid, skysport, skysports]
+    phrases: [a spor, real madrid, sky sport, sky sports, bein sports, ssc sport]
+  - name: MBC group
+    tokens: ["mbc*"]
+  - name: National Geographic
+    tokens: [natgeo, nationalgeographic]
+    phrases: [nat geo, national geographic]
+  - name: Discovery
+    tokens: [discovery, dmax, animalplanet]
+    phrases: [animal planet, discovery channel]
+  - name: International news networks
+    tokens: ["cnn*", bbc, skynews, aljazeera, alarabiya, alhadath, france24, euronews, dw, rt, rttv, nasa, abc, oan, trtworld]
+    phrases: [al jazeera, al arabiya, al hadath, sky news, france 24, rt arabic, abc news, nasa tv, trt world, deutsche welle, one america]
+  - name: Turkish mainstream TV
+    tokens: [kanald, startv, teve2, haber61, ntv, tv8, atv, showtv, trtcocuk, trtbelgesel, trt1, trt2, trthaber, trtspor, trtarabi]
+    phrases: [kanal d, star tv, haber 61, trt cocuk, trt belgesel, trt documentary, trt spor, trt haber, trt arabi, show tv, cnn turk, a haber]
+  - name: German and other public TV
+    tokens: [daserste, zdf, ard, tagesschau, toggo, "vtv*", tf1]
+    url_tokens: [zdf, "vtv*"]
+    phrases: [das erste, zdf neo, zdf info]
+  - name: Non-Kurdish religious TV
+    tokens: [makkah, madinah, "quran*", tayba, wesal, islamchannel, peacetv]
+    phrases: [islam channel, peace tv, makkah live, madinah live]
+  - name: Arabic mainstream TV
+    tokens: [dubaione, spacetoon, alsharqiya, dijlah, alyaum]
+    phrases: [dubai one, al sharqiya, al yaum]
+
+# ---- manual overrides ----------------------------------------------------------------------------------------------
+overrides:
+  # Force a raw label (as a source shows it) onto a channel id: {"kurdmax live": kurdmax-kurmanci}
+  force_alias: {}
+  # Prefer streams from these sources first when two candidates are otherwise equal: {channel-id: [source-id, ...]}
+  preferred_source: {}
+  # Always list this URL first for a channel (it must still pass probing): {channel-id: "https://..."}
+  pin_url: {}
+  # Fix a wrong logo: {channel-id: "https://direct-image-url.png"} or {channel-id: placeholder}
+  logo:
+    21-kanal: placeholder   # the source page shows NRT Sport's logo on this tile
+  # Names/ids that must never be merged even though they look alike: [[a, b], ...]
+  never_merge: []

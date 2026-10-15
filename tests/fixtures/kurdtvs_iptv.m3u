@@ -1,0 +1,17 @@
+#EXTM3U
+#EXTINF:-1 tvg-name="Rudaw TV Live" tvg-logo="https://kurdtvs.net/uploads/rudawhd.png" group-title="News General Local Kurdish",Rudaw TV Live
+https://live.rudaw.net/hls/rudaw-tv/master.m3u8
+#EXTINF:-1 tvg-name="Kurdsat Tv" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="News General Local Kurdish",Kurdsat Tv
+https://hlspackager.akamaized.net/live/DB/KURDSAT_HD/HLS/KURDSAT_HD.m3u8
+#EXTINF:-1 tvg-name="Kurdsat Tv" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="News General Local Kurdish",Kurdsat Tv (Alt 2)
+https://kurdsat.akamaized.net/hls/kurdsat.m3u8
+#EXTINF:-1 tvg-name="Zagros TV" tvg-logo="https://kurdtvs.net/uploads/zagros.png" group-title="News Local General Kurdish",Zagros TV HD
+https://5a3ed7a72ed4b.streamlock.net/zagrostv/SMIL:myStream.smil/playlist.m3u8
+#EXTINF:-1 tvg-name="Mihrab TV" tvg-logo="https://kurdtvs.net/uploads/mihrab.png" group-title="Kurdish",Mihrab TV
+http://baskhd.ddns.net:40/live/MihrabTV/playlist.m3u8
+#EXTINF:-1 tvg-name="TRT Ã‡ocuk" group-title="Children Turkish",TRT Ã‡ocuk
+https://tv-trtcocuk.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-name="Kanal D TV HD" group-title="Turkish",Kanal D TV HD
+https://demiroren-live.daioncdn.net/kanald/kanald.m3u8
+#EXTINF:-1 tvg-name="Al Jazeera English" group-title="News Documentary English",Al Jazeera English
+https://live-hls-web-aje.getaj.net/AJE/03.m3u8
