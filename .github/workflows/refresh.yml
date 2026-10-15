@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: the verified environment (ubuntu-latest moves to a new OS release on 2026-10-19)
     timeout-minutes: 30
     environment:
       name: github-pages

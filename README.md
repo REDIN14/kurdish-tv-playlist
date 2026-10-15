@@ -9,6 +9,12 @@ the playlist only contains links to streams that other people operate.
 http://<host>:8787/playlist.m3u        <- the address you give to a player
 ```
 
+This repository's own deployment (GitHub Pages, refreshed every 6 hours by GitHub, no server involved):
+
+```
+https://redin14.github.io/kurdish-tv-playlist/playlist.m3u
+```
+
 ## Use it
 
 | Player | How |
@@ -116,8 +122,9 @@ The playlist is just an HTTP(S) address; where it lives decides who can reach it
   private and login-gated by default, and a page cannot run the scheduled refresh. A player cannot fetch anything from there.
 * **GitHub Pages** – `.github/workflows/refresh.yml` refreshes every 6 hours on GitHub's runners and publishes
   `playlist.m3u` + logos as a static site: a stable HTTPS URL, no server. Caveats: a static site cannot run the 15-minute
-  failover check; streams that block data-centre IP addresses will look dead from there; and GitHub pauses scheduled
-  workflows in a repository with no activity for 60 days (re-enable it in the Actions tab).
+  failover check; streams that block data-centre IP addresses will look dead from there (in the first run 24 of the 25
+  channels that verify from a home connection verified; CHANNEL8's video segments answer 403 to GitHub's servers); and
+  GitHub pauses scheduled workflows in a repository with no activity for 60 days (re-enable it in the Actions tab).
 
 ## Diagnosing
 
