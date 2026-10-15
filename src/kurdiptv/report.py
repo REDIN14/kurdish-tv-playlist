@@ -90,7 +90,7 @@ def plain_reason(errors: dict | None) -> str:
     match = re.search(r"http-(\d{3})", kind)
     code = int(match.group(1)) if match else 0
     if code in (401, 403):
-        return "only plays on its own website or app and refuses other players"
+        return "its server refuses other players (website-only, region- or login-locked)"
     if code in (400, 404, 410):
         return "its stream address no longer exists"
     if code == 429:

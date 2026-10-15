@@ -163,7 +163,7 @@ def test_build_static_writes_a_ready_to_host_site(settings, tmp_path, capsys):
 def test_plain_language_reasons_and_the_landing_page_section(settings, tmp_path, capsys):
     from kurdiptv.report import plain_reason, unavailable_channels, unavailable_html
 
-    assert plain_reason({"http-403": 1}) == "only plays on its own website or app and refuses other players"
+    assert plain_reason({"http-403": 1}) == "its server refuses other players (website-only, region- or login-locked)"
     assert plain_reason({"http-404": 2, "dns": 1}) == "its stream address no longer exists"
     assert plain_reason({"dns": 2}) == "its stream server no longer exists"
     assert plain_reason({"connect-timeout": 3}) == plain_reason({"variant http-503": 1}) == "its stream server is down or not responding"
@@ -178,7 +178,7 @@ def test_plain_language_reasons_and_the_landing_page_section(settings, tmp_path,
     ]}}
     # the broadcaster's own address decides; channels nobody curated are not listed at all
     assert unavailable_channels(report) == [
-        ("Kurdmax Sorani", "only plays on its own website or app and refuses other players"),
+        ("Kurdmax Sorani", "its server refuses other players (website-only, region- or login-locked)"),
         ("Zed <b>TV</b>", "its stream server no longer exists"),
     ]
     page = unavailable_html(report)

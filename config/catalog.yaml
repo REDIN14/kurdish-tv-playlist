@@ -339,20 +339,13 @@ channels:
     language: ku
     url_patterns: [NUBARtv]
 
-  - id: ava-tv
-    name: AVA TV
-    aliases: [Ava, Ava HD]
-    category: General
-    language: ku
-    url_patterns: [ava2.store/upload/ava.m3u8]
-
   - id: ava-media
     name: AVA Media
-    aliases: [AVA News, AVA Media Network, AVA News Kurdish TV]
+    aliases: [AVA News, AVA Media Network, AVA News Kurdish TV, AVA TV, Ava, Ava HD]   # "AVA TV" is the same channel (ava2.store)
     category: News
     language: ku
     country: IQ
-    url_patterns: [ava002.xyz, ava2.store/upload/images/, live/DB/AVA_TV]
+    url_patterns: [ava002.xyz, ava2.store/upload/, live/DB/AVA_TV]
     sites: [ava.news]
 
   - id: ava-family

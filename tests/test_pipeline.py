@@ -236,7 +236,7 @@ async def test_the_reason_comes_from_the_broadcasters_own_address_even_when_othe
     assert entry["official_errors"] == {"http-403": 1} and "http-404" in entry["errors"]
     from kurdiptv.report import unavailable_channels
 
-    assert dict(unavailable_channels(report))["Kurdsat TV"] == "only plays on its own website or app and refuses other players"
+    assert dict(unavailable_channels(report))["Kurdsat TV"] == "its server refuses other players (website-only, region- or login-locked)"
 
 
 async def test_unchanged_refresh_reuses_probes_and_keeps_the_snapshot(app, world):
