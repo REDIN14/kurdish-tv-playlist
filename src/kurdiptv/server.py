@@ -22,7 +22,7 @@ from .app import App
 from .config import Settings
 from .pipeline import RefreshBusy, health_check, refresh
 from .playlist import BASE_TOKEN
-from .report import iso, render_report_text
+from .report import iso, load_report, render_report_text, unavailable_html
 from .util import now
 
 log = logging.getLogger(__name__)
@@ -232,7 +232,8 @@ def create_app(settings: Settings, *, app_obj: App | None = None, start_schedule
             f"{meta.get('channels', '?')} channels, updated {html.escape(str(meta.get('created_at', '?')))}"
             if pub else "The first playlist is still being built - reload in a few minutes."
         )
-        return HTMLResponse(_INDEX.format(url=html.escape(url), status=status, version=__version__))
+        unavailable = unavailable_html(load_report(settings.published_dir))
+        return HTMLResponse(_INDEX.format(url=html.escape(url), status=status, version=__version__, unavailable=unavailable))
 
     # ---- admin -------------------------------------------------------------------------------------------------------
     @api.post("/refresh", status_code=202)
@@ -293,6 +294,7 @@ ul{{padding-left:1.2rem}} li{{margin:.35rem 0}} small{{color:var(--muted)}}
 <li><b>Kodi</b>: PVR IPTV Simple Client &rarr; M3U play list URL &rarr; paste the address.</li>
 <li><b>OTT Navigator</b>: Add provider &rarr; Playlist &rarr; paste the address.</li>
 </ul>
+{unavailable}
 <p><small>Channels in the group "Backup streams" are alternative links for the same channel - use them if the main one stops.
 The list refreshes itself; there is nothing to update. v{version}</small></p>
 </main></body></html>"""

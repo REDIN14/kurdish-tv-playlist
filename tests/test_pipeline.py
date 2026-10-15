@@ -184,6 +184,61 @@ async def test_a_rendition_playlist_and_its_master_are_one_stream_and_the_master
     assert primaries(app)["chunk-test-kurdish"].url == base + "chunklist.m3u8"
 
 
+async def test_a_packager_rendition_gets_its_master_tried_and_the_master_wins(app, world):
+    base = "https://packager.example/live/DB/NEWS_HD/HLS/"
+    rendition = base + "NEWS_HD-avc1_2500000=10002,mp4a_128000=20000.m3u8"
+    world.stream(base + "NEWS_HD.m3u8", 1080)  # the channel's master, listed by no source
+    media = world.web.add_stream(rendition, master=False, variants=[])
+    world.streams[rendition] = media
+    world.m3u_entries.append(["Packager Test Kurdish TV", "Kurdish", rendition])  # the list carries only one rendition of it
+    world.publish_sources()
+    await refresh(app, "test")
+    assert primaries(app)["packager-test-kurdish"].url == base + "NEWS_HD.m3u8"
+    assert "packager-test-kurdish-alt2" not in backups(app)
+
+    world.streams[base + "NEWS_HD.m3u8"].alive = False  # master dies: the rendition takes over
+    for _ in range(3):
+        advance(7 * 3600)
+        await refresh(app, "test")
+    assert primaries(app)["packager-test-kurdish"].url == rendition
+
+
+async def test_the_report_names_known_unavailable_channels_in_plain_words(app, world):
+    world.streams[KSAT_A].alive = False
+    world.streams[KSAT_B].alive = False  # Kurdsat: every address dead
+    report = await refresh(app, "test")
+    gone = {c["id"]: c for c in report["channels"]["unverified"]}
+    assert gone["kurdsat-tv"]["in_catalog"] is True and "official_errors" in gone["kurdsat-tv"]
+    from kurdiptv.report import unavailable_channels
+
+    assert dict(unavailable_channels(report))["Kurdsat TV"] == "its stream address no longer exists"
+    assert "Speda TV" in dict(unavailable_channels(report))  # also catalogued and dead (404)
+
+
+async def test_the_reason_comes_from_the_broadcasters_own_address_even_when_other_sources_list_it_too(make_app, world, web, settings):
+    own = "https://kurdsat-official.example/hls/kurdsat.m3u8"
+    world.stream(own, 720).status = 403  # the broadcaster's server refuses every player but its own website
+    world.stream(KSAT_A, 1080, alive=False)
+    world.stream(KSAT_B, 720, alive=False)  # the copies on aggregator pages are simply gone
+    world.m3u_entries.append(["Kurdsat Tv", "News General Local Kurdish", own])  # an ordinary source lists the same address as well
+    world.publish_sources()
+    web.add("https://kurdsat-official.example/robots.txt", text="", content_type="text/plain")
+    web.add("https://kurdsat-official.example/live", text=f'<html><script>player.load("{own}")</script></html>')
+    sources = tuple(
+        dataclasses.replace(src, options={"channels": [{"name": "Kurdsat TV", "pages": ["https://kurdsat-official.example/live"]}]})
+        if src.id == "official" else src
+        for src in settings.sources
+    )
+    small = dataclasses.replace(settings, sources=sources, publish=dataclasses.replace(settings.publish, min_channels=3))
+    app = make_app(settings_override=small, canary_urls=(CANARY,))
+    report = await refresh(app, "test")
+    entry = next(c for c in report["channels"]["unverified"] if c["id"] == "kurdsat-tv")
+    assert entry["official_errors"] == {"http-403": 1} and "http-404" in entry["errors"]
+    from kurdiptv.report import unavailable_channels
+
+    assert dict(unavailable_channels(report))["Kurdsat TV"] == "only plays on its own website or app and refuses other players"
+
+
 async def test_unchanged_refresh_reuses_probes_and_keeps_the_snapshot(app, world):
     first = await refresh(app, "test")
     snap = app.publisher.current().snapshot_id

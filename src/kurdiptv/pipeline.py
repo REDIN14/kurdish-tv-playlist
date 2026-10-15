@@ -27,7 +27,7 @@ from .probe import ProbeResult
 from .rank import Choice, choose
 from .report import iso, render_report_text
 from .store import load_active_candidates, record_source_run, save_assignment, upsert_candidate
-from .util import now, url_key
+from .util import now, rendition_master, url_key
 
 log = logging.getLogger(__name__)
 
@@ -84,13 +84,11 @@ def _states_for(app: App, cids: list[int]) -> list[CandState]:
         if known is None or (s.trust == "high" and known.trust != "high"):
             best[key] = s
     states = list(best.values())
-    # A Wowza ".../chunklist.m3u8" is one rendition of the master ".../playlist.m3u8" beside it: the same stream. While the
-    # master works the rendition is redundant; if the master stops working the rendition remains as the way in.
-    working_masters = {s.url for s in states if s.url.endswith("/playlist.m3u8") and s.last_ok}
-    return [
-        s for s in states
-        if not (s.url.endswith("/chunklist.m3u8") and s.url[: -len("chunklist.m3u8")] + "playlist.m3u8" in working_masters)
-    ]
+    # A single rendition (Wowza ".../chunklist.m3u8", packager ".../NAME-avc1_2500000=10002.m3u8") is one rendition of the master
+    # beside it: the same stream. While the master works the rendition is redundant; if the master stops working the rendition
+    # remains as the way in.
+    working_masters = {url_key(s.url) for s in states if s.last_ok and (s.kind == "hls-master" or s.url.endswith("/playlist.m3u8"))}
+    return [s for s in states if not ((master := rendition_master(s.url)) and url_key(master) in working_masters)]
 
 
 def _choose(app: App, channel_id: str, states: list[CandState], ts: float) -> Choice:
@@ -293,9 +291,11 @@ def _rank(app: App, match: MatchResult, report: dict) -> tuple[list[PublishedCha
         choice = _choose(app, gid, states, ts)
         if choice.primary is None:
             errors = Counter(_failure_class(s.last_error) for s in states if s.last_error)
+            own = Counter(_failure_class(s.last_error) for s in states if s.last_error and s.official)
             chans["unverified"].append(
                 {"id": gid, "name": group.name, "candidates": len(states), "sources": sorted(group.sources),
-                 "errors": dict(errors.most_common(3))}
+                 "errors": dict(errors.most_common(3)), "official_errors": dict(own.most_common(3)),
+                 "in_catalog": group.catalog is not None}
             )
             continue
         ch = PublishedChannel(

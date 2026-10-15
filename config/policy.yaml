@@ -27,7 +27,25 @@ blocklist:
     - Infinity TV              # film channels: they rebroadcast Hollywood films (rights-sensitive, like the "movie" names below)
     - Red TV
     - Soran Entertainment
-  hosts: []              # stream host, e.g. ["badserver.example"]
+    - Gewher TV                # dubbed Islamic historical films ("Badinan Fox" watermark): a film channel, like the three above
+    - Bnar TV                  # a nature loop with a "New" logo: neither the channel nor its language could be confirmed
+  hosts:                 # stream host (and its sub-domains), e.g. ["badserver.example"]
+    # Relay / proxy platforms: a stranger re-serving somebody else's stream, which is how access controls such as Kurdmax's
+    # website-only playback get "solved" in community lists. Never published: that would pass on the circumvention.
+    - workers.dev
+    - pages.dev
+    - vercel.app
+    - herokuapp.com
+    - onrender.com
+    - netlify.app
+    - glitch.me
+    - repl.co
+    - fly.dev
+    - deno.dev
+    - trycloudflare.com
+    - ngrok-free.app
+    - ngrok.io
+    - loca.lt
   url_contains: []       # any substring of a stream URL
 
 # ---- brands that are not Kurdish TV (commercial pay-TV, sports, international networks) -----------------------------

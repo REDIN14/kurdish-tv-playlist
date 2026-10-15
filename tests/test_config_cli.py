@@ -30,7 +30,7 @@ def copy_config(tmp_path, **replacements):
 
 def test_shipped_configuration_is_valid_and_complete():
     s = load_settings(config_dir=REPO / "config", data_dir=REPO / ".pytest_tmp" / "cfgcheck")
-    lists = ["list-zheer88", "list-hersh", "list-bashdar", "list-qsnoramedi", "list-6ebeng"]
+    lists = ["list-zheer88", "list-hersh", "list-bashdar", "list-qsnoramedi", "list-6ebeng", "list-mhamad", "list-andam"]
     assert [x.id for x in s.sources] == ["kurdtvs", "kurditv", "site123", "iptvorg", "iptvorg-iq", "iptvorg-sy", "official", *lists, "karwan"]
     official = next(x for x in s.sources if x.id == "official")
     assert official.options["channels"] and official.official  # the broadcasters' own pages are configured and count as original
@@ -158,6 +158,41 @@ def test_build_static_writes_a_ready_to_host_site(settings, tmp_path, capsys):
     assert Image.open(out_dir / "logos" / "ch0.png").size
     assert (out_dir / ".nojekyll").exists() and json.loads((out_dir / "health.json").read_text())["channels"] == 6
     assert "https://user.github.io/kurdish-tv/playlist.m3u" in (out_dir / "index.html").read_text(encoding="utf-8")
+
+
+def test_plain_language_reasons_and_the_landing_page_section(settings, tmp_path, capsys):
+    from kurdiptv.report import plain_reason, unavailable_channels, unavailable_html
+
+    assert plain_reason({"http-403": 1}) == "only plays on its own website or app and refuses other players"
+    assert plain_reason({"http-404": 2, "dns": 1}) == "its stream address no longer exists"
+    assert plain_reason({"dns": 2}) == "its stream server no longer exists"
+    assert plain_reason({"connect-timeout": 3}) == plain_reason({"variant http-503": 1}) == "its stream server is down or not responding"
+    assert plain_reason({"tls": 1}) == "its stream server has an invalid security certificate"
+    assert plain_reason({"not an HLS playlist": 1}) == "no direct stream address (a web page or embedded player only)"
+    assert plain_reason({}) == plain_reason(None) == "no working stream at the moment"
+
+    report = {"channels": {"unverified": [
+        {"id": "kurdmax-sorani", "name": "Kurdmax Sorani", "in_catalog": True, "errors": {"connect-timeout": 3, "http-404": 1}, "official_errors": {"http-403": 1}},
+        {"id": "zzz", "name": "Zed <b>TV</b>", "in_catalog": True, "errors": {"dns": 1}},
+        {"id": "x", "name": "Unreviewed label from a low-trust page", "in_catalog": False, "errors": {"dns": 1}},
+    ]}}
+    # the broadcaster's own address decides; channels nobody curated are not listed at all
+    assert unavailable_channels(report) == [
+        ("Kurdmax Sorani", "only plays on its own website or app and refuses other players"),
+        ("Zed <b>TV</b>", "its stream server no longer exists"),
+    ]
+    page = unavailable_html(report)
+    assert "Kurdmax Sorani" in page and "Zed &lt;b&gt;TV&lt;/b&gt;" in page and "<b>TV</b>" not in page and "Unreviewed" not in page
+    assert unavailable_html({"channels": {"unverified": []}}) == "" and unavailable_html(None) == ""
+
+    # ... and it reaches the static site, built from the report the refresh wrote
+    publish_sample(settings)
+    (settings.published_dir / "report.json").write_text(json.dumps(report), encoding="utf-8")
+    out_dir = tmp_path / "site"
+    code, _, _ = run_cli(capsys, *args(settings), "build-static", str(out_dir), "--base-url", "https://user.github.io/kurdish-tv", "--no-report")
+    index = (out_dir / "index.html").read_text(encoding="utf-8")
+    assert code == 0 and "Known channels that are not in the list right now" in index and "Kurdmax Sorani" in index
+    assert not (out_dir / "report.json").exists()  # the page carries names and reasons only, never the report itself
 
 
 def test_build_static_needs_an_absolute_base_url_and_a_playlist(settings, tmp_path, capsys):

@@ -69,7 +69,7 @@ channels:
     category: News
     language: ckb
     country: IQ
-    url_patterns: [giatv-nrt]
+    url_patterns: [giatv-nrt/nrt/, live/DB/NRT_HD]   # not "giatv-nrt": that also matches NRT Sport and NRT 4 on the same account
     sites: [nrttv.com]
 
   - id: nrt-2
@@ -100,12 +100,13 @@ channels:
 
   - id: gali-kurdistan-tv
     name: Gali Kurdistan TV
-    aliases: [Gali Kurdistan, Galikurdistan, GK Sat, GaliKurdistan HD]
+    aliases: [Gali Kurdistan, Galikurdistan, GK, GK Sat, GaliKurdistan HD]
     category: General
     language: ckb
     country: IQ
     url_patterns: [gksat, GaliKurdistan]
     sites: [gksat.tv]
+    own_servers: [live.host247.net/gk/gksat]   # named on gksat.tv's own live page
 
   - id: payam-tv
     name: Payam TV
@@ -211,9 +212,13 @@ channels:
     category: General
     language: kmr
     url_patterns: [jintv]
+    sites: [jintv.net, jintv.org]
 
   # ---------------------------------------------------------------- Kurdmax family (several distinct channels)
-    sites: [jintv.net, jintv.org]
+  # Source of truth: the live pages on kurdmax.tv, kurdmaxshow.tv and kurdmaxmusic.tv (read by the "official" source): Sorani and
+  # Kurmanji (main), Show in Sorani and Kurmanji, and Music. On 2026-10-15 none of them played for an outside player: the two
+  # main channels answered 403 to everything but Kurdmax's own website, Show's origin was down (Cloudflare 522) and Music's
+  # server refused connections. They are tracked here so that each one appears by itself the day its stream accepts outside players.
 
   - id: kurdmax-sorani
     name: Kurdmax Sorani
@@ -240,7 +245,7 @@ channels:
     language: ckb
     country: IQ
     url_patterns: [kurdmaxshow-sorani, SHOWS123, kurdmaxshowSO]
-    sites: [kurdmax.tv]
+    sites: [kurdmaxshow.tv]
 
   - id: kurdmax-show-kurmanci
     name: Kurdmax Show Kurmanci
@@ -248,8 +253,8 @@ channels:
     category: Entertainment
     language: kmr
     country: IQ
-    url_patterns: [liveTrans/SHOW2/]
-    sites: [kurdmax.tv]
+    url_patterns: [liveTrans/SHOW2/, kurdmaxshow-kurmanji]
+    sites: [kurdmaxshow.tv]
 
   - id: kurdmax-music
     name: Kurdmax Music
@@ -257,10 +262,11 @@ channels:
     category: Music
     language: ckb
     country: IQ
-    url_patterns: [31.14.40.139:1935/music/]
+    url_patterns: [31.14.40.139:1935/music/, /music/MUSIC2402]   # MUSIC2402 is the address kurdmaxmusic.tv's own player uses
+    sites: [kurdmaxmusic.tv]
+    own_servers: [6476e46b58f91.streamlock.net/music/]
 
   # ---------------------------------------------------------------- Kurmanji / diaspora / Turkey
-    sites: [kurdmax.tv]
 
   - id: ronahi-tv
     name: Ronahi TV
@@ -300,7 +306,7 @@ channels:
     aliases: [Med Muzik TV, Med Music, Med Müzik, Medmuzik, Med Muzik Live]
     category: Music
     language: kmr
-    url_patterns: [med-musik, medmuzik, /music/MUSIC2402/]
+    url_patterns: [med-musik, medmuzik, live/DB/MED_MUSIC]
     sites: [medmuzik.tv]
 
   - id: zarok-tv-kurmanci
@@ -584,9 +590,38 @@ channels:
 
   - id: gali-kurdistan-plus
     name: Gali Kurdistan Plus
-    aliases: [GK Plus, GK+ TV]
+    aliases: [GK Plus, GK Plus TV, GaliKurdistan Plus]   # not "GK+": it normalises to plain "gk", which is Gali Kurdistan TV
     category: Music
     language: ckb
     country: IQ
     url_patterns: [gk/gkplus]
     sites: [gksat.tv]
+    own_servers: [live.host247.net/gk/gkplus]   # the address gksat.tv's own "GK Plus" page uses
+
+  # ---------------------------------------------------------------- added after the Kurdmax / completeness review (2026-10-15)
+  # Every one was checked by looking at a live frame of its stream before it was added.
+  - id: peshmerga-tv
+    name: Peshmerga TV
+    aliases: [Peshmerge TV, Peshmarga TV, Peshmerga, Peshmerge, KU Peshmarga TV HD]
+    category: General
+    language: ckb
+    country: IQ
+    url_patterns: [giatv-shawkat/peshmerge]
+
+  # ONE TV network (Komal media): listed under "Kurdistan" by the list that carries them; ONE Plus shows a speaker in
+  # traditional Kurdish dress, ONE Kids is a children's channel. Language of the kids' soundtrack not independently confirmed.
+  - id: one-plus
+    name: ONE Plus
+    aliases: [One Plus TV, One Plus HD]
+    category: Religion
+    language: ckb
+    country: IQ
+    url_patterns: [ssh101/oneplus4k, giatv-oneplus]
+
+  - id: one-kids
+    name: ONE Kids
+    aliases: [One Kids TV, One Kids HD]
+    category: Kids
+    language: ckb
+    country: IQ
+    url_patterns: [ssh101/onekids4k, giatv-onekids]

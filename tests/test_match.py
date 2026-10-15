@@ -338,3 +338,62 @@ def test_shipped_catalog_is_consistent(catalog):
     assert catalog.by_url("https://5a3ed7a72ed4b.streamlock.net/zagrostv/SMIL:myStream.smil/playlist.m3u8").id == "zagros-tv"
     assert catalog.by_url("https://5a3ed7a72ed4b.streamlock.net/live/SMIL:myStream.smil/playlist.m3u8").id == "kurdistan-tv"
     assert catalog.by_url("https://unknown.example/x.m3u8") is None
+
+
+def test_stream_addresses_of_the_kurdmax_and_gali_kurdistan_families_map_to_the_right_channel(catalog):
+    """The four Kurdmax live pages and the two Gali Kurdistan pages name these addresses; each belongs to exactly one channel and
+    counts as the broadcaster's own. A default port in the address (":443") must not change the answer."""
+    cases = {
+        "https://stream.kurdmax.tv/app/kurdmax-sorani1/ts:playlist.m3u8": ("kurdmax-sorani", True),
+        "https://stream.kurdmax.tv/app/kurdmax-kurmanji2/ts:playlist.m3u8": ("kurdmax-kurmanci", True),
+        "https://stream.kurdmaxshow.tv/app/kurdmaxshow-sorani/llhls.m3u8": ("kurdmax-show", True),
+        "https://stream.kurdmaxshow.tv/app/kurdmaxshow-kurmanji/llhls.m3u8": ("kurdmax-show-kurmanci", True),
+        "https://6476e46b58f91.streamlock.net:443/music/MUSIC2402/playlist.m3u8": ("kurdmax-music", True),
+        "https://6476e46b58f91.streamlock.net/music/MUSIC2402/playlist.m3u8": ("kurdmax-music", True),  # not Med Muzik
+        "https://live.host247.net/gk/gksat/playlist.m3u8": ("gali-kurdistan-tv", True),
+        "https://live.host247.net/gk/gkplus/playlist.m3u8": ("gali-kurdistan-plus", True),
+        "https://hlspackager.akamaized.net/live/DB/MED_MUSIC/HLS/MED_MUSIC.m3u8": ("med-muzik", False),  # a distributor, not Med's own
+    }
+    for url, (channel_id, original) in cases.items():
+        found = catalog.by_url(url)
+        assert found is not None and (found.id, found.is_original(url)) == (channel_id, original), url
+
+
+def test_gali_kurdistan_labels_do_not_collapse_onto_the_plus_channel(catalog):
+    # "GK+" and "GK" normalise to the same key; the plain abbreviation is the main channel
+    assert catalog.by_name("GK").id == "gali-kurdistan-tv" and catalog.by_name("GK Sat").id == "gali-kurdistan-tv"
+    assert catalog.by_name("GK Plus").id == "gali-kurdistan-plus"
+
+
+def test_nrt_patterns_do_not_pull_in_the_sport_or_fourth_channel(catalog):
+    nrt = "https://live20.bozztv.com/giatv/giatv-nrt/nrt/chunks.m3u8"
+    assert catalog.by_url(nrt).id == "nrt-tv"
+    assert catalog.by_url("https://hlspackager.akamaized.net/live/DB/NRT_HD/HLS/NRT_HD.m3u8").id == "nrt-tv"
+    assert catalog.by_url("https://live20.bozztv.com/giatv/giatv-NRT-SPORT/NRT-SPORT/chunks.m3u8") is None  # sport: never NRT TV
+    assert catalog.by_url("https://live20.bozztv.com/giatv/giatv-nrt4stream/nrt4stream/chunks.m3u8") is None
+
+
+def test_relay_platforms_are_never_published_for_any_channel(catalog, policy):
+    """Community lists often point at a stranger's proxy (a Cloudflare Worker, a free app host) that re-serves a stream whose
+    owner only allows playback on its own site. Such a link is not the channel's stream and passes on the circumvention."""
+    for url in (
+        "https://kurdmaxshow1.worldtvplus.workers.dev/live.m3u8",
+        "https://kurdmax-relay.vercel.app/hls/playlist.m3u8",
+        "https://someone.herokuapp.com/kurdmax.m3u8",
+        "https://x.trycloudflare.com/a.m3u8",
+    ):
+        res = run([(HIGH, cand(HIGH, "Kurdmax Show", url))], catalog, policy)
+        assert not res.groups and reasons(res) == {"Kurdmax Show": "blocklist"}, url
+    res = run([(HIGH, cand(HIGH, "Kurdmax Show", "https://stream.kurdmaxshow.tv/app/kurdmaxshow-sorani/llhls.m3u8"))], catalog, policy)
+    assert list(res.groups) == ["kurdmax-show"]  # the channel's own server is fine
+
+
+def test_no_catalogued_channel_is_blocklisted_or_a_denied_brand(catalog, policy):
+    """The catalogue and the policy must not contradict each other (a channel added to one that the other forbids is dead weight
+    at best and a published film/sports/relay channel at worst)."""
+    for ch in catalog.channels:
+        assert policy.blocked(channel_id=ch.id, name=ch.name, url="") is None, f"{ch.id} is blocklisted"
+        for alias in ch.aliases:
+            assert policy.blocked(channel_id=None, name=alias, url="") is None, f"{ch.id}: alias {alias!r} is blocklisted"
+        for pattern in ch.url_patterns:
+            assert policy.denied_by_url("https://" + pattern.strip("/")) is None, f"{ch.id}: pattern {pattern!r} names a denied brand"

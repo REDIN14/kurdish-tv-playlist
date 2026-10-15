@@ -142,7 +142,7 @@ sources:
     trust: high
     official: true
     min_interval: 1.0
-    max_requests: 40
+    max_requests: 60
     page_ttl_hours: 12
     options:
       channels:
@@ -159,7 +159,15 @@ sources:
         - {name: "Sercem TV",          pages: ["https://sercemtv.com.tr/"]}
         - {name: "Kirkuk TV",          pages: ["https://kirkuktv.net/KU/Live"]}
         - {name: "KNN",                pages: ["https://www.knnc.net/live1.aspx"]}
+        # Kurdmax: the live pages of the family. Today their streams refuse outside players (Sorani, Kurmanji: HTTP 403), or
+        # their servers are down (Show: Cloudflare 522, Music: connection refused); each appears by itself once one works.
         - {name: "Kurdmax Sorani",     pages: ["https://kurdmax.tv/live-stream"]}
+        - {name: "Kurdmax Kurmanci",   pages: ["https://kurdmax.tv/live-stream?lang=ku"]}
+        - {name: "Kurdmax Show",       pages: ["https://www.kurdmaxshow.tv/live-stream"]}
+        - {name: "Kurdmax Show Kurmanci", pages: ["https://www.kurdmaxshow.tv/live-stream?lang=ku"]}
+        - {name: "Kurdmax Music",      pages: ["https://www.kurdmaxmusic.tv/live-stream"]}
+        - {name: "Gali Kurdistan TV",  pages: ["https://www.gksat.tv/"]}
+        - {name: "Gali Kurdistan Plus", pages: ["https://www.gksat.tv/KU/Liveplus"]}
         - {name: "Aryen TV",           pages: ["https://aryen.tv/"]}
         - {name: "Welat TV",           pages: ["https://www.welattv.net/live-page"]}
         - {name: "4 Kurd",             pages: ["https://4kurd.persiana.live/"]}
@@ -209,6 +217,26 @@ sources:
   - id: list-6ebeng
     adapter: m3u
     url: https://raw.githubusercontent.com/6ebeng/Kurdish-Playlist-IPTV-M3U/main/Chennels.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  # Two more, found by searching GitHub again on 2026-10-15; each is the only list carrying a working address for at least
+  # one catalogued channel (NRT and ONE Plus / ONE Kids; Peshmerga TV). Reseller-panel entries in them are rejected as usual.
+  - id: list-mhamad
+    adapter: m3u
+    url: https://raw.githubusercontent.com/mhamadrebwar3600-dev/IPTV-Kurdi/main/playlist.m3u
+    trust: low
+    catalog_only: true
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+
+  - id: list-andam
+    adapter: m3u
+    url: https://raw.githubusercontent.com/AndamAziz/Andamiptv/main/andam-playlist.m3u
     trust: low
     catalog_only: true
     min_interval: 1.0

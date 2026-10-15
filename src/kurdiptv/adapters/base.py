@@ -12,7 +12,7 @@ from ..config import SourceConfig
 from ..fetcher import FetchProblem, SourceFetcher
 from ..models import RawCandidate, SourceResult
 from ..policy import strip_ephemeral_query
-from ..util import clip, url_key
+from ..util import clip, rendition_master, url_key
 
 log = logging.getLogger(__name__)
 
@@ -80,10 +80,11 @@ class SourceAdapter:
         known = self.found.get(key)
         if known is None:
             self.found[key] = cand
-            # A bare Wowza ".../chunklist.m3u8" is one rendition; the master ".../playlist.m3u8" next to it offers all of
-            # them. Try the master as well - probing decides which works and which is better.
-            if cand.url.endswith("/chunklist.m3u8") and "?" not in cand.url:
-                self.add(dataclasses.replace(cand, url=cand.url[: -len("chunklist.m3u8")] + "playlist.m3u8", note="derived-master"))
+            # A single rendition (a bare Wowza ".../chunklist.m3u8", a packager ".../NAME-avc1_2500000=10002.m3u8") has a master
+            # playlist next to it that offers all of them. Try the master as well - probing decides which works and which is better.
+            master = rendition_master(cand.url)
+            if master:
+                self.add(dataclasses.replace(cand, url=master, note="derived-master"))
             return
         # Same URL seen twice in one source: keep the richer record.
         known.logo_url = known.logo_url or cand.logo_url

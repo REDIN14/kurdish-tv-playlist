@@ -50,6 +50,19 @@ def test_wowza_session_chunklists_become_the_master():
     assert canonical_stream_url("https://h/a/index.m3u8") == "https://h/a/index.m3u8"
 
 
+def test_rendition_playlists_know_their_master():
+    from kurdiptv.util import rendition_master
+
+    base = "https://hlspackager.akamaized.net/live/DB/NRT_HD/HLS/"
+    assert rendition_master(base + "NRT_HD-avc1_2500000=10002,mp4a_128000=20000.m3u8") == base + "NRT_HD.m3u8"
+    assert rendition_master("http://h/live/DB/AVA_TV/HLS/AVA_TV-avc1_2500000=10002.m3u8") == "http://h/live/DB/AVA_TV/HLS/AVA_TV.m3u8"
+    assert rendition_master("http://h:80/app/x/chunklist.m3u8") == "http://h:80/app/x/playlist.m3u8"
+    assert rendition_master(base + "KURDSAT_HD-mp4a_128000_eng=20000.m3u8") is None  # an audio rendition is not a video stream's twin
+    assert rendition_master("http://h/app/x/chunklist.m3u8?session=1") is None  # a query may be a session: leave it alone
+    assert rendition_master("https://live.rudaw.net/hls/rudaw-tv/stream_1080p.m3u8") is None  # not a known layout
+    assert rendition_master("https://a/b/playlist.m3u8") is None
+
+
 # ---- kurdtvs.net ------------------------------------------------------------------------------------------------------------
 
 def routes_kurdtvs(web):

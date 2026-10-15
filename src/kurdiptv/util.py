@@ -55,6 +55,23 @@ def url_key(url: str) -> str:
     return urlunsplit((scheme, netloc, parts.path or "/", parts.query, ""))
 
 
+_PACKAGER_RENDITION = re.compile(r"-(?:avc1|hvc1|hev1)_\d+=\d+[^/]*\.m3u8$", re.IGNORECASE)
+
+
+def rendition_master(url: str) -> str | None:
+    """The master playlist that a single-rendition playlist URL belongs to, for the hosting layouts that are known:
+    Wowza ``…/chunklist.m3u8`` -> ``…/playlist.m3u8`` and the packager style ``…/NAME-avc1_2500000=10002,mp4a_128000=20000.m3u8``
+    -> ``…/NAME.m3u8``. None when the URL is not recognisably one rendition (or carries a query, which may be a session)."""
+    if "?" in url:
+        return None
+    if url.endswith("/chunklist.m3u8"):
+        return url[: -len("chunklist.m3u8")] + "playlist.m3u8"
+    match = _PACKAGER_RENDITION.search(url)
+    if match:
+        return url[: match.start()] + ".m3u8"
+    return None
+
+
 def url_host(url: str) -> str:
     return (urlsplit(url).hostname or "").lower()
 

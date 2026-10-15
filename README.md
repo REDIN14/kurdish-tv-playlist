@@ -61,14 +61,20 @@ If this machine loses its internet connection, a run is abandoned and **nothing*
 | semir.site123.me | tile grid → player pages on `wapsite.me`; titles on that page are unreliable, so names come from link targets and must be corroborated | works (low trust) |
 | iptv-org | the community-maintained list of publicly available streams (Kurdish-language list, plus two channels from its Iraq/Syria lists) | works; several channels here have current links where the pages above are stale |
 | broadcasters' own pages | `adapter: official` reads each channel's live page and takes the stream address its player uses; **these are the original sources and are listed first** | works; confirms most addresses and revives a channel automatically if its broadcaster repairs a stream |
-| Kurdish lists on GitHub | five community-maintained M3U files (`list-*` in `settings.yaml`); they carry current addresses of small channels the aggregator pages list with dead links. They can only add streams to channels in `catalog.yaml` (their labels are unreliable and they mix in world sports, pay-TV and cartoons) | works |
+| Kurdish lists on GitHub | seven community-maintained M3U files (`list-*` in `settings.yaml`); they carry current addresses of small channels the aggregator pages list with dead links. They can only add streams to channels in `catalog.yaml` (their labels are unreliable and they mix in world sports, pay-TV and cartoons). Links on relay platforms (Cloudflare Workers, free app hosts...) are never used: a stranger re-serving a stream whose owner restricts it passes the restriction on | works |
 | karwan.tv | **behind a Cloudflare bot challenge** | reported as `blocked`; never circumvented. It starts working by itself if the site owner lets this aggregator in. |
 
 Channels that are listed by the sources but not in the playlist have no working public stream today. Their own sites
-were checked: KNN and Kirkuk TV's pages point at servers that are gone or return 404, Kurdmax's server refuses
-non-browser clients, NRT, Speda, Kurdsat and AVA's sites block automated access (bot challenges), and AVA
-Entertainment, Aryen TV, Korek TV and Net TV's sites are offline. Every address ever found stays in the database and
-is re-tested with growing delays, so such a channel appears by itself when its stream returns.
+were checked: KNN and Kirkuk TV's pages point at servers that are gone or return 404, NRT, Speda, Kurdsat and AVA's sites
+block automated access (bot challenges), and AVA Entertainment, Aryen TV, Korek TV and Net TV's sites are offline.
+**Kurdmax** has five live channels (Sorani and Kurmanji on kurdmax.tv, Show in both dialects on kurdmaxshow.tv, Music on
+kurdmaxmusic.tv): checked on 2026-10-15 from two networks, the two main channels answer HTTP 403 to every player (their
+website is the only place they play), Show's origin is down (Cloudflare 522) and Music's server refuses connections. Their
+live pages are read at every refresh, so each one appears by itself - listed as the broadcaster's own stream - the day it
+works for outside players. Every address ever found stays in the database and is re-tested with growing delays.
+
+The landing page of a published site lists these channels under "Known channels that are not in the list right now", each with
+the reason in plain words (refuses outside players, server down, address gone...), built from the latest refresh.
 
 The source sites also show channels that play in the browser but cannot be put in a playlist: kurdtvs.net and semir.site123.me
 embed YouTube live streams (Net TV, Newline, Rasan TV, Zikrakani...) or ok.ru video players (UTV Hawler, NewMax Kids, Waar TV's

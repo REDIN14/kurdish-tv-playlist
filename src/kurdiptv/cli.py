@@ -16,7 +16,7 @@ from .config import ConfigError, load_settings
 from .pipeline import RefreshBusy, health_check, refresh
 from .playlist import BASE_TOKEN, validate_m3u
 from .publish import Publisher
-from .report import iso, render_report_text
+from .report import iso, load_report, render_report_text, unavailable_html
 from .server import render_playlist
 from .util import atomic_write_text
 
@@ -169,18 +169,18 @@ def cmd_build_static(args) -> int:
     }
     atomic_write_text(out / "health.json", json.dumps(health, indent=2))
     atomic_write_text(out / ".nojekyll", "")
-    atomic_write_text(out / "index.html", _static_index(base + "/playlist.m3u", cur.meta))
+    atomic_write_text(out / "index.html", _static_index(base + "/playlist.m3u", cur.meta, unavailable_html(load_report(settings.published_dir))))
     print(f"static site written to {out} ({len(wanted)} channels) - playlist URL: {base}/playlist.m3u")
     return 0
 
 
-def _static_index(url: str, meta: dict) -> str:
+def _static_index(url: str, meta: dict, unavailable: str = "") -> str:
     import html
 
     from .server import _INDEX
 
     status = f"{meta.get('channels', '?')} channels, updated {html.escape(str(meta.get('created_at', '?')))}"
-    return _INDEX.format(url=html.escape(url), status=status, version=__version__)
+    return _INDEX.format(url=html.escape(url), status=status, version=__version__, unavailable=unavailable)
 
 
 # ---- entry point -----------------------------------------------------------------------------------------------------

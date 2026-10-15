@@ -47,9 +47,14 @@ class CatalogChannel:
 
 
 def url_target(url: str) -> str:
-    """The part of a stream URL that url_patterns are matched against: host[:port] + path, lower-case."""
+    """The part of a stream URL that url_patterns are matched against: host[:port] + path, lower-case.
+    A default port (":443" on https, ":80" on http) is dropped, so the same stream matches with or without it."""
     parts = urlsplit(url)
-    return ((parts.netloc.rsplit("@", 1)[-1]) + parts.path).lower()
+    host = parts.netloc.rsplit("@", 1)[-1]
+    default = {"http": ":80", "https": ":443"}.get(parts.scheme)
+    if default and host.endswith(default):
+        host = host[: -len(default)]
+    return (host + parts.path).lower()
 
 
 class Catalog:
