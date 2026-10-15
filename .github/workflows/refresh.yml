@@ -8,6 +8,13 @@ on:
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
+  push:                       # a change to the code or the channel lists is published right away
+    branches: [main]
+    paths:
+      - "config/**"
+      - "src/**"
+      - "pyproject.toml"
+      - ".github/workflows/refresh.yml"
 
 permissions:
   contents: read

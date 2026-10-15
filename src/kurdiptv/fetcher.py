@@ -25,7 +25,13 @@ _BOT_WALL_MARKERS = (
     "enable javascript and cookies to continue",
     "ddos protection by",
     "__cf_chl_",
+    "sucuri_cloudproxy_js",  # Sucuri: "You are being redirected... Javascript is required"
+    "_incapsula_resource",
+    "incapsula incident id",
 )
+# These interstitials are served with unusual status codes (Sucuri answers 307), so the marker check is not limited
+# to 401/403/429/503 - but only the strong, specific markers count outside those statuses.
+_STRONG_MARKERS = ("sucuri_cloudproxy_js", "_incapsula_resource", "challenges.cloudflare.com", "cf-browser-verification", "__cf_chl_")
 
 
 class FetchProblem(Exception):
@@ -52,6 +58,10 @@ def looks_like_bot_wall(status: int, headers, body_text: str) -> bool:
     if status in {401, 403, 429, 503}:
         low = body_text[:6000].lower()
         if any(marker in low for marker in _BOT_WALL_MARKERS):
+            return True
+    elif status in {200, 202, 301, 302, 307, 308} and len(body_text) < 20_000:
+        low = body_text[:6000].lower()
+        if any(marker in low for marker in _STRONG_MARKERS):
             return True
     return False
 

@@ -93,7 +93,11 @@ def test_bot_wall_detection():
     assert looks_like_bot_wall(403, httpx.Headers({}), CHALLENGE)
     assert looks_like_bot_wall(200, httpx.Headers({"cf-mitigated": "challenge"}), "")
     assert not looks_like_bot_wall(403, httpx.Headers({}), "Forbidden")
-    assert not looks_like_bot_wall(200, httpx.Headers({}), CHALLENGE)  # an ordinary page that merely mentions it
+    assert looks_like_bot_wall(200, httpx.Headers({}), CHALLENGE)  # the Cloudflare page is recognised even with a 200
+    assert not looks_like_bot_wall(200, httpx.Headers({}), "<html>Just a moment...</html>")  # the weak phrase alone is not enough
+    sucuri = "<html><title>You are being redirected...</title><script>var sucuri_cloudproxy_js='';</script></html>"
+    assert looks_like_bot_wall(307, httpx.Headers({}), sucuri)  # Sucuri's JS challenge answers 307
+    assert not looks_like_bot_wall(200, httpx.Headers({}), "<html>" + "x" * 30_000 + "sucuri_cloudproxy_js</html>")  # a big real page
 
 
 async def test_pages_are_cached_and_revalidated(web):

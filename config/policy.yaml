@@ -21,7 +21,9 @@ scope:
 # Add anything a rights holder or site owner asks you to remove. Matches are case-insensitive.
 blocklist:
   channel_ids: []        # e.g. [some-channel-id]
-  names: []              # e.g. ["Some Channel"]  (compared after name normalisation)
+  names:                 # compared after name normalisation
+    - Atrak TV                 # Iranian regional channels that iptv-org tags with a Kurdish language
+    - West Azerbaijan TV
   hosts: []              # stream host, e.g. ["badserver.example"]
   url_contains: []       # any substring of a stream URL
 

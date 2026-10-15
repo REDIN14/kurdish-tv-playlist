@@ -99,6 +99,67 @@ sources:
       follow_links: true
       skip_categories: ["sport"]
 
+  # iptv-org: a community-maintained database of publicly available streams (github.com/iptv-org/iptv). Its
+  # Kurdish-language list often has current links where the aggregator pages above still show dead ones.
+  - id: iptvorg
+    adapter: m3u
+    url: https://iptv-org.github.io/iptv/languages/kur.m3u
+    trust: high
+    min_interval: 1.0
+    max_requests: 5
+    page_ttl_hours: 12
+
+  # iptv-org's Iraq and Syria lists hold a few Kurdish channels that are not tagged "Kurdish" there; take only those.
+  - id: iptvorg-iq
+    adapter: m3u
+    url: https://iptv-org.github.io/iptv/countries/iq.m3u
+    trust: high
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+    options:
+      only: [AVA Family, Zagros TV]    # Zagros TV: a 1080p stream next to the 720p one the aggregator pages list
+
+  - id: iptvorg-sy
+    adapter: m3u
+    url: https://iptv-org.github.io/iptv/countries/sy.m3u
+    trust: high
+    min_interval: 1.0
+    max_requests: 3
+    page_ttl_hours: 12
+    options:
+      only: [Welat TV]
+
+  # The broadcasters' own pages, re-read at every refresh. They confirm the addresses already in the list and bring a
+  # channel back by itself the day its broadcaster repairs or moves its stream (Kirkuk TV, KNN, Kurdmax and Aryen TV
+  # point at servers that are offline or refuse outside players today). Sites that block automated access
+  # (NRT, Speda, Kurdsat, AVA: bot challenges) or forbid it in robots.txt (Waar) are left out. "only" keeps one
+  # channel's address when a page lists many (TRT's page lists a dozen channels).
+  - id: official
+    adapter: official
+    url: https://www.kurdistantv.net/ku/live
+    trust: high
+    min_interval: 1.0
+    max_requests: 40
+    page_ttl_hours: 12
+    options:
+      channels:
+        - {name: "Kurdistan TV",       pages: ["https://www.kurdistantv.net/ku/live"]}
+        - {name: "Rudaw TV",           pages: ["https://rudaw.net/"], only: "rudaw"}
+        - {name: "TRT Kurdî",          pages: ["https://trtkurdi.com.tr/"], only: "trtkurdi"}
+        - {name: "Payam TV",           pages: ["https://www.peyam.net/live.aspx"]}
+        - {name: "Sterk TV",           pages: ["https://sterktv1.net/"]}
+        - {name: "Med Muzik",          pages: ["http://medmuzik.tv/"]}
+        - {name: "Zarok TV Kurmanci",  pages: ["https://zaroktv.com.tr/"]}
+        - {name: "Avar TV",            pages: ["https://avartv.net/"]}
+        - {name: "Komala TV",          pages: ["https://tvkomala.com/"]}
+        - {name: "Ilke TV",            pages: ["https://www.ilketv.com.tr/"]}
+        - {name: "Sercem TV",          pages: ["https://sercemtv.com.tr/"]}
+        - {name: "Kirkuk TV",          pages: ["https://kirkuktv.net/KU/Live"]}
+        - {name: "KNN",                pages: ["https://www.knnc.net/live1.aspx"]}
+        - {name: "Kurdmax Sorani",     pages: ["https://kurdmax.tv/live-stream"]}
+        - {name: "Aryen TV",           pages: ["https://aryen.tv/"]}
+
   # karwan.tv sits behind a Cloudflare bot challenge. The adapter makes one honest request and
   # reports "blocked" - it never tries to get around the challenge. It starts working by itself
   # if the site owner allows this aggregator.

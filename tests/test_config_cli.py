@@ -30,10 +30,13 @@ def copy_config(tmp_path, **replacements):
 
 def test_shipped_configuration_is_valid_and_complete():
     s = load_settings(config_dir=REPO / "config", data_dir=REPO / ".pytest_tmp" / "cfgcheck")
-    assert [x.id for x in s.sources] == ["kurdtvs", "kurditv", "site123", "karwan"]
+    assert [x.id for x in s.sources] == ["kurdtvs", "kurditv", "site123", "iptvorg", "iptvorg-iq", "iptvorg-sy", "official", "karwan"]
+    assert next(x for x in s.sources if x.id == "official").options["channels"]  # the broadcasters' own pages are configured
     assert s.service.refresh_interval_hours == 6 and s.service.health_interval_minutes == 15
     assert s.service.refresh_on_startup and s.publish.keep_snapshots == 3
-    assert {x.id: x.trust for x in s.sources} == {"kurdtvs": "high", "kurditv": "high", "site123": "low", "karwan": "low"}
+    trust = {x.id: x.trust for x in s.sources}
+    assert trust["site123"] == "low" and trust["karwan"] == "low"  # weak titles / blocked
+    assert all(trust[i] == "high" for i in ("kurdtvs", "kurditv", "iptvorg", "iptvorg-iq", "iptvorg-sy", "official"))
     assert s.http.respect_robots and not s.http.allow_private_hosts
 
 

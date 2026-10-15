@@ -57,7 +57,15 @@ If this machine loses its internet connection, a run is abandoned and **nothing*
 | kurdtvs.net | its published M3U (`/iptv.php?format=m3u`) + each channel page's player data | works |
 | kurditv.com | the site's WordPress REST API + the `vembed_data` call its own player makes | works |
 | semir.site123.me | tile grid → player pages on `wapsite.me`; titles on that page are unreliable, so names come from link targets and must be corroborated | works (low trust) |
+| iptv-org | the community-maintained list of publicly available streams (Kurdish-language list, plus two channels from its Iraq/Syria lists) | works; several channels here have current links where the pages above are stale |
+| broadcasters' own pages | `adapter: official` reads each channel's live page and takes the stream address its player uses | works; confirms most addresses and revives a channel automatically if its broadcaster repairs a stream |
 | karwan.tv | **behind a Cloudflare bot challenge** | reported as `blocked`; never circumvented. It starts working by itself if the site owner lets this aggregator in. |
+
+Channels that are listed by the sources but not in the playlist have no working public stream today. Their own sites
+were checked: KNN and Kirkuk TV's pages point at servers that are gone or return 404, Kurdmax's server refuses
+non-browser clients, NRT, Speda, Kurdsat and AVA's sites block automated access (bot challenges), and AVA
+Entertainment, Aryen TV, Korek TV and Net TV's sites are offline. Every address ever found stays in the database and
+is re-tested with growing delays, so such a channel appears by itself when its stream returns.
 
 Built in: `robots.txt` is honoured for every page fetched; one request per second per source, a request budget per run,
 page caching with conditional requests; a descriptive User-Agent; private/loopback addresses are refused (SSRF guard, also

@@ -304,3 +304,62 @@ channels:
     category: General
     language: ku
     url_patterns: [ava2.store/upload/ava.m3u8]
+
+  - id: ava-media
+    name: AVA Media
+    aliases: [AVA News, AVA Media Network, AVA News Kurdish TV]
+    category: News
+    language: ku
+    country: IQ
+    url_patterns: [ava002.xyz, ava2.store/upload/images/]
+
+  - id: ava-family
+    name: AVA Family
+    aliases: [Ava Family TV]
+    category: Entertainment
+    language: ku
+    country: IQ
+    url_patterns: [familyhls.avatv.live]
+
+  # ---------------------------------------------------------------- more Kurdish channels (found via iptv-org)
+  - id: kurd-channel
+    name: Kurd Channel
+    aliases: [KurdCh, Kurdch TV, KurdChannel, Kurd Channel TV]
+    category: General
+    language: ku
+    url_patterns: [kurdchhls.wns.live, kurd-channel.ikoflix.com]
+
+  - id: mixkurdy
+    name: Mixkurdy
+    aliases: [Mixkurdish, Mix Kurdish, Mix Kurdy]
+    category: Entertainment
+    language: ku
+    url_patterns: [Mix-kurdy, mixkurdish]
+
+  - id: aryen-tv
+    name: Aryen TV
+    aliases: [Aryen, ARYEN TV Kurdish Unveiling Kurdish Culture and Media Tenacity]
+    category: Culture
+    language: kmr
+    url_patterns: [aryen.tv]
+
+  - id: channel-8
+    name: Channel 8
+    aliases: [Channel8, CHANNEL8 Kurdish TV, Channel 8 Kurdish TV, Channel8 Kurdish]
+    category: News
+    language: kmr
+    url_patterns: [live.channel8.com]
+
+  - id: komala-tv
+    name: Komala TV
+    aliases: [Komala, TV Komala]
+    category: Culture
+    language: ckb
+    url_patterns: [komhls.wns.live]
+
+  - id: welat-tv
+    name: Welat TV
+    aliases: [Welat]
+    category: News
+    language: kmr
+    url_patterns: [stream.badinan.xyz/welat]

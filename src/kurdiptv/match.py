@@ -21,10 +21,12 @@ from .util import slugify, url_key
 
 _EVIDENCE = {"override": 5, "url-pattern": 4, "catalog-name": 3, "catalog-alias": 2, "derived": 1}
 _CONFIDENCE = {"high": 3, "medium": 2, "low": 1}
+# First match wins, so the order is the priority: a channel tagged both Culture and Religious is a culture channel.
 _CATEGORY_WORDS = [
     ("kids", "Kids"), ("children", "Kids"), ("cartoon", "Kids"), ("news", "News"), ("music", "Music"),
-    ("religion", "Religion"), ("islamic", "Religion"), ("education", "Education"), ("documentary", "Culture"),
-    ("culture", "Culture"), ("entertainment", "Entertainment"), ("general", "General"),
+    ("documentary", "Culture"), ("culture", "Culture"), ("education", "Education"),
+    ("religion", "Religion"), ("religious", "Religion"), ("islamic", "Religion"),
+    ("entertainment", "Entertainment"), ("family", "Entertainment"), ("general", "General"),
 ]
 
 

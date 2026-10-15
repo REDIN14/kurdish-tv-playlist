@@ -231,6 +231,72 @@ async def test_generic_m3u_source_needs_no_code(web, settings):
     await http.aclose()
 
 
+def test_playlist_decorations_are_not_part_of_the_name():
+    from kurdiptv.adapters.m3u import clean_playlist_name
+
+    assert clean_playlist_name("Afarin TV (720p) [Not 24/7]") == "Afarin TV"
+    assert clean_playlist_name("Rudaw TV (1080p)") == "Rudaw TV"
+    assert clean_playlist_name("Zagros TV (Iraq) (1080p)") == "Zagros TV"
+    assert clean_playlist_name("Welat TV (1080i)") == "Welat TV"
+    assert clean_playlist_name("Channel 8 [Geo-blocked]") == "Channel 8"
+    assert clean_playlist_name("Med Muzik") == "Med Muzik"
+
+
+async def test_m3u_source_can_take_only_listed_channels(web, settings):
+    src = SourceConfig(id="regional", adapter="m3u", url="https://lists.test/iq.m3u", min_interval=0.0, trust="high", options={"only": ["AVA Family", "Welat TV"]})
+    web.add("https://lists.test/robots.txt", text="", content_type="text/plain")
+    web.add("https://lists.test/iq.m3u", text='#EXTM3U\n#EXTINF:-1,Al Sharqiya (1080p)\nhttp://a.test/1.m3u8\n#EXTINF:-1,AVA Family\nhttps://b.test/2.m3u8\n'
+                                              '#EXTINF:-1,Welat TV (1080i)\nhttps://c.test/3.m3u8\n#EXTINF:-1,Dijlah TV\nhttps://d.test/4.m3u8\n')
+    http = SafeHttp(user_agent="t", resolver=web.resolver, transport=web.transport())
+    db = Database(":memory:")
+    res = await run_adapter(ADAPTERS["m3u"](src, SourceFetcher(http, db, src, RobotsCache(http, db))))
+    assert [c.name for c in res.candidates] == ["AVA Family", "Welat TV"]
+    assert res.skipped == {"not-in-only-list": 2}
+    await http.aclose()
+
+
+async def test_official_adapter_reads_each_broadcaster_page_and_survives_broken_ones(web, settings):
+    src = SourceConfig(
+        id="official", adapter="official", url="https://a.test/", min_interval=0.0, trust="high", max_requests=50,
+        options={"channels": [
+            {"name": "Kirkuk TV", "pages": ["https://a.test/live"]},
+            {"name": "KNN", "pages": ["https://b.test/live"]},          # behind a bot challenge
+            {"name": "Speda TV", "pages": ["https://c.test/live"]},      # 404
+            {"name": "Zed TV", "pages": ["https://d.test/live"]},        # page without a stream
+            {"name": "Multi TV", "pages": ["https://e.test/live"], "only": r"/main/", "max_streams": 1},
+            {"name": "", "pages": ["https://x.test/"]},                   # incomplete entry
+        ]},
+    )
+    for host in "abcde":
+        web.add(f"https://{host}.test/robots.txt", text="User-agent: *\nDisallow:\n", content_type="text/plain")
+    web.add("https://a.test/live", text='<script>var player = {src: "https:\\/\\/live.kirkuk.example\\/hls\\/stream\\/index.m3u8"};</script>')
+    web.add("https://b.test/live", status=403, text=CHALLENGE, headers={"cf-mitigated": "challenge"})
+    web.add("https://c.test/live", status=404, text="nope")
+    web.add("https://d.test/live", text="<html>coming soon</html>")
+    web.add("https://e.test/live", text='<a href="https://cdn.test/ads/promo.m3u8"></a><a href="https://cdn.test/main/a.m3u8"></a><a href="https://cdn.test/main/b.m3u8"></a>')
+    http = SafeHttp(user_agent="t", resolver=web.resolver, transport=web.transport())
+    db = Database(":memory:")
+    res = await run_adapter(ADAPTERS["official"](src, SourceFetcher(http, db, src, RobotsCache(http, db))))
+    got = {c.name: c.url for c in res.candidates}
+    assert got == {"Kirkuk TV": "https://live.kirkuk.example/hls/stream/index.m3u8", "Multi TV": "https://cdn.test/main/a.m3u8"}
+    kirkuk = next(c for c in res.candidates if c.name == "Kirkuk TV")
+    assert kirkuk.name_confidence == "high" and kirkuk.page_url == "https://a.test/live" and "Kurdish" in kirkuk.tags
+    assert res.status == "partial"  # some broadcaster pages are down: reported, not fatal
+    assert any("KNN" in n and "blocked" in n for n in res.notes) and any("Speda" in n for n in res.notes)
+    assert res.skipped["page-blocked"] == 1 and res.skipped["page-http"] == 1 and res.skipped["page-without-stream"] == 1
+    assert res.skipped["incomplete-entry"] == 1
+    await http.aclose()
+
+
+async def test_official_source_without_channels_fails_loudly(web, settings):
+    src = SourceConfig(id="official", adapter="official", url="https://a.test/", min_interval=0.0)
+    http = SafeHttp(user_agent="t", resolver=web.resolver, transport=web.transport())
+    db = Database(":memory:")
+    res = await run_adapter(ADAPTERS["official"](src, SourceFetcher(http, db, src, RobotsCache(http, db))))
+    assert res.status == "failed" and "options.channels" in res.error
+    await http.aclose()
+
+
 async def test_adapter_crash_is_contained(web, settings):
     class Broken(ADAPTERS["m3u"]):
         async def discover(self):

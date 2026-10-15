@@ -243,6 +243,32 @@ def test_catalog_rejects_alias_collisions_and_typos(tmp_path):
         Catalog.load(bad)
 
 
+def test_iptv_org_style_names_merge_with_the_other_sources_spellings(catalog, policy):
+    res = run([
+        (HIGH, cand(HIGH, "Channel8", "https://live.channel8.com/Channel8-Kurdish/index.fmp4.m3u8")),
+        (HIGH2, cand(HIGH2, "CHANNEL8 Kurdish TV", "https://other.example/c8/master.m3u8")),
+        (HIGH, cand(HIGH, "Kurd Channel", "https://kurdchhls.wns.live/hls/stream.m3u8")),
+        (HIGH2, cand(HIGH2, "kurdch TV", "https://kurd-channel.ikoflix.com/hls/kurd-channel.m3u8")),
+        (HIGH, cand(HIGH, "Mixkurdy", "https://avr.host247.net/live/Mix-kurdy/playlist.m3u8")),
+        (LOW, cand(LOW, "Mixkurdish HD", "http://217.74.16.163:9590/live/mixkurdish/video.m3u8")),
+        (HIGH, cand(HIGH, "AVA Media", "https://ava002.xyz/upload/images/1080.m3u8")),
+        (HIGH2, cand(HIGH2, "AVA News  live kurdish tv", "https://ava2.store/upload/images/1080.m3u8")),
+    ], catalog, policy)
+    assert {g: len(v.members) for g, v in res.groups.items()} == {"channel-8": 2, "kurd-channel": 2, "mixkurdy": 2, "ava-media": 2}
+
+
+def test_iptv_org_categories_are_understood():
+    from kurdiptv.match import _category_from_tags
+
+    assert _category_from_tags({"Religious"}) == "Religion"
+    assert _category_from_tags({"Family"}) == "Entertainment"
+    assert _category_from_tags({"Kids"}) == "Kids"
+    assert _category_from_tags({"Undefined"}) == "General"
+    assert _category_from_tags({"Culture", "General"}) == "Culture"
+    assert _category_from_tags({"Culture", "General", "Religious"}) == "Culture"  # Sercem TV: culture first
+    assert _category_from_tags({"Religious"}) == "Religion"
+
+
 def test_shipped_catalog_is_consistent(catalog):
     assert len(catalog.channels) >= 35
     for ch in catalog.channels:
