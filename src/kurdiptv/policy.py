@@ -36,6 +36,16 @@ def strip_ephemeral_query(url: str) -> str:
     return parts._replace(query=query).geturl()
 
 
+def redact_url(url: str) -> str:
+    """Report-safe form of a URL: one that carries credentials or tokens keeps only scheme://host, so a rejected
+    stream is never republished together with somebody else's login."""
+    if credential_reason(url) is None:
+        return url
+    parts = urlsplit(url)
+    port = f":{parts.port}" if parts.port else ""
+    return f"{parts.scheme}://{parts.hostname or ''}{port}/(credentials removed)"
+
+
 def credential_reason(url: str) -> str | None:
     """Why this URL carries credentials / private tokens (so it cannot be published), or None."""
     parts = urlsplit(url)

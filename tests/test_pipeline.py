@@ -177,6 +177,15 @@ async def test_streams_with_embedded_credentials_never_appear(app, world):
     text = app.publisher.current().playlist
     assert "secretpass" not in text and "token=" not in text
     assert report["excluded"]["by_reason"]["unsafe-url"] == 2
+    # ... and the rejected URLs are not republished in any report either
+    import json
+
+    everything = json.dumps(report) + render_report_text(report)
+    for f in app.settings.published_dir.glob("report.*"):
+        everything += f.read_text(encoding="utf-8")
+    assert "secretpass" not in everything and "token=abc" not in everything
+    shown = {e["name"]: e["url"] for e in report["excluded"]["examples"]}
+    assert shown["Paid Panel TV"] == "http://185.166.25.198:25461/(credentials removed)"
 
 
 # ---- outages ----------------------------------------------------------------------------------------------------------------------------------

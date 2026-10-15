@@ -65,7 +65,8 @@ jobs:
 
       - name: Build the static site
         id: site
-        run: kurdiptv build-static site --base-url "${{ steps.pages.outputs.base_url }}"
+        # --no-report: the public site carries the playlist and logos only; diagnostics stay in the workflow log
+        run: kurdiptv build-static site --base-url "${{ steps.pages.outputs.base_url }}" --no-report
 
       - uses: actions/upload-pages-artifact@v3
         if: steps.site.outcome == 'success'

@@ -22,6 +22,7 @@ from .health import CandState, due_for_full_probe, load_states, record_probe
 from .match import ChannelGroup, MatchResult, match_candidates
 from .models import SourceResult
 from .playlist import PublishedChannel, PublishedStream, render_m3u, validate_m3u
+from .policy import redact_url
 from .probe import ProbeResult
 from .rank import Choice, choose
 from .report import iso, render_report_text
@@ -210,7 +211,7 @@ def _match(app: App, report: dict) -> MatchResult:
     report["excluded"] = {
         "by_reason": dict(by_reason.most_common()),
         "examples": [
-            {"name": m.cand.name, "source": m.source_id, "url": m.cand.url, "reason": m.reason}
+            {"name": m.cand.name, "source": m.source_id, "url": redact_url(m.cand.url), "reason": m.reason}
             for m in sorted(match.excluded, key=lambda x: (x.reason, x.cand.name))
         ][:400],
     }
