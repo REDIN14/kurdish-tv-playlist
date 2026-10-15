@@ -13,6 +13,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write   # only to re-enable this workflow (keep-alive step at the end)
 
 concurrency:
   group: pages
@@ -77,3 +78,12 @@ jobs:
         id: deploy
         if: steps.site.outcome == 'success'
         uses: actions/deploy-pages@v4
+
+      # GitHub pauses scheduled workflows in a repository with no activity for 60 days. Re-enabling the
+      # workflow on every run restarts that clock, so the 6-hourly schedule keeps itself alive.
+      - name: Keep the schedule alive
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/refresh.yml/enable"

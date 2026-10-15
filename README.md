@@ -124,7 +124,8 @@ The playlist is just an HTTP(S) address; where it lives decides who can reach it
   `playlist.m3u` + logos as a static site: a stable HTTPS URL, no server. Caveats: a static site cannot run the 15-minute
   failover check; streams that block data-centre IP addresses will look dead from there (in the first run 24 of the 25
   channels that verify from a home connection verified; CHANNEL8's video segments answer 403 to GitHub's servers); and
-  GitHub pauses scheduled workflows in a repository with no activity for 60 days (re-enable it in the Actions tab).
+  GitHub pauses scheduled workflows in a repository with no activity for 60 days - the workflow re-enables itself on every
+  run to restart that clock (if you ever see it paused, press "Enable workflow" in the Actions tab).
 
 ## Diagnosing
 
