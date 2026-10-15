@@ -481,14 +481,6 @@ channels:
     country: IQ
     url_patterns: [halabjatv]
 
-  - id: red-tv
-    name: Red TV
-    aliases: [Red]
-    category: Entertainment
-    language: ckb
-    country: IQ
-    url_patterns: [/live/redtv]
-
   - id: ala-tv
     name: Ala TV
     aliases: [Alla TV, Alla, Ala]
@@ -590,10 +582,11 @@ channels:
     country: IR
     url_patterns: [live/db/rojhelat]
 
-  - id: infinity-tv
-    name: Infinity TV
-    aliases: [Infinity, Infinity HD]
-    category: Entertainment
+  - id: gali-kurdistan-plus
+    name: Gali Kurdistan Plus
+    aliases: [GK Plus, GK+ TV]
+    category: Music
     language: ckb
     country: IQ
-    url_patterns: [cdn.karwan.tv/infinity-tv]
+    url_patterns: [gk/gkplus]
+    sites: [gksat.tv]

@@ -24,6 +24,9 @@ blocklist:
   names:                 # compared after name normalisation
     - Atrak TV                 # Iranian regional channels that iptv-org tags with a Kurdish language
     - West Azerbaijan TV
+    - Infinity TV              # film channels: they rebroadcast Hollywood films (rights-sensitive, like the "movie" names below)
+    - Red TV
+    - Soran Entertainment
   hosts: []              # stream host, e.g. ["badserver.example"]
   url_contains: []       # any substring of a stream URL
 
